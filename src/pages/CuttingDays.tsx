@@ -17,7 +17,8 @@ import {
   Pen, 
   Trash2,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  CalendarPlus
 } from "lucide-react";
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
