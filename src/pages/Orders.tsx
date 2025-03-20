@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -43,10 +42,8 @@ const Orders = () => {
     dateTo: undefined,
   });
   
-  // Apply filters
   const filteredOrders = filterOrders(filterOptions);
   
-  // Status filter options
   const statusOptions = [
     { value: 'pending', label: 'En attente' },
     { value: 'confirmed', label: 'Confirmée' },
@@ -55,7 +52,6 @@ const Orders = () => {
     { value: 'cancelled', label: 'Annulée' },
   ];
   
-  // Handle sort change
   const toggleSort = (field: 'name' | 'date' | 'weight' | 'status') => {
     setFilterOptions(prev => ({
       ...prev,
@@ -64,7 +60,6 @@ const Orders = () => {
     }));
   };
   
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilterOptions(prev => ({
       ...prev,
@@ -72,7 +67,6 @@ const Orders = () => {
     }));
   };
   
-  // Handle status checkbox change
   const handleStatusChange = (status: string, checked: boolean) => {
     setFilterOptions(prev => {
       if (checked) {
@@ -83,7 +77,6 @@ const Orders = () => {
     });
   };
   
-  // Handle date filter change
   const handleDateChange = (date: Date | undefined, type: 'from' | 'to') => {
     setFilterOptions(prev => ({
       ...prev,
@@ -91,7 +84,6 @@ const Orders = () => {
     }));
   };
   
-  // Reset filters
   const resetFilters = () => {
     setFilterOptions({
       searchTerm: '',
@@ -104,7 +96,6 @@ const Orders = () => {
     setIsFilterOpen(false);
   };
   
-  // Handle delete order
   const handleDeleteOrder = () => {
     if (selectedOrder) {
       deleteOrder(selectedOrder.id);
@@ -115,22 +106,30 @@ const Orders = () => {
   return (
     <Layout>
       <div className="animate-fade-in">
-        {/* Header section */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Commandes</h1>
             <p className="text-muted-foreground">
-              Gérez vos commandes et suivez leur progression.
+              Gérez les commandes clients et suivez leur statut
             </p>
           </div>
-          <Button onClick={() => navigate('/orders/new')}>
-            <Plus className="mr-2 h-4 w-4" /> Nouvelle commande
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/orders/take')}
+            >
+              <PackagePlus className="mr-2 h-4 w-4" />
+              Prise de commande
+            </Button>
+            <Button onClick={() => navigate('/orders/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nouvelle commande
+            </Button>
+          </div>
         </div>
         
         <Separator className="my-6" />
         
-        {/* Order summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="card-hover">
             <CardHeader className="flex flex-row items-center justify-between py-3">
@@ -187,7 +186,6 @@ const Orders = () => {
           </Card>
         </div>
         
-        {/* Search and filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -318,7 +316,6 @@ const Orders = () => {
           </Button>
         </div>
         
-        {/* Orders table */}
         <Card>
           <CardContent className="p-0">
             <div className="rounded-md border">
@@ -449,7 +446,6 @@ const Orders = () => {
           </CardContent>
         </Card>
         
-        {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
