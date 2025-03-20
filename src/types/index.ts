@@ -43,6 +43,17 @@ export interface Order {
   orderDate: Date;
   deliveryDate?: Date;
   notes?: string;
+  cuttingDayId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CuttingDay {
+  id: string;
+  date: Date;
+  description?: string;
+  totalWeight: number;
+  orderCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,4 +81,5 @@ export interface FilterOptions {
   status?: string[];
   dateFrom?: Date;
   dateTo?: Date;
+  cuttingDayId?: string;
 }

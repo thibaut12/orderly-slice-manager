@@ -21,6 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatWeight } from '@/utils/calculations';
+import CuttingDaySelect from '@/components/CuttingDaySelect';
 
 // Schéma de validation pour le formulaire de commande
 const orderFormSchema = z.object({
@@ -35,6 +36,7 @@ const orderFormSchema = z.object({
   status: z.enum(["pending", "confirmed", "processing", "completed", "cancelled"], {
     required_error: "Veuillez sélectionner un statut",
   }),
+  cuttingDayId: z.string().optional(),
 });
 
 type OrderFormValues = z.infer<typeof orderFormSchema>;
@@ -55,6 +57,7 @@ const OrderCreate = () => {
     defaultValues: {
       orderDate: new Date(),
       status: "pending",
+      cuttingDayId: "",
     },
   });
 
@@ -155,6 +158,7 @@ const OrderCreate = () => {
       orderDate: data.orderDate,
       deliveryDate: data.deliveryDate,
       notes: data.notes,
+      cuttingDayId: data.cuttingDayId && data.cuttingDayId !== "" ? data.cuttingDayId : undefined,
     };
 
     // Ajouter la commande
@@ -264,6 +268,23 @@ const OrderCreate = () => {
                             />
                           </PopoverContent>
                         </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Journée de découpe */}
+                  <FormField
+                    control={form.control}
+                    name="cuttingDayId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <CuttingDaySelect
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

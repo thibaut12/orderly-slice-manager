@@ -1,13 +1,14 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Client, Product, Order, FilterOptions, CuttingSummary } from '../types';
+import { Client, Product, Order, FilterOptions, CuttingSummary, CuttingDay } from '../types';
 import { toast } from "sonner";
 
 interface AppContextType {
   clients: Client[];
   products: Product[];
   orders: Order[];
+  cuttingDays: CuttingDay[];
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateClient: (clientId: string, clientData: Partial<Client>) => void;
   deleteClient: (clientId: string) => void;
@@ -17,8 +18,12 @@ interface AppContextType {
   addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateOrder: (orderId: string, orderData: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
+  addCuttingDay: (cuttingDay: Omit<CuttingDay, 'id' | 'createdAt' | 'updatedAt' | 'totalWeight' | 'orderCount'>) => void;
+  updateCuttingDay: (cuttingDayId: string, cuttingDayData: Partial<CuttingDay>) => void;
+  deleteCuttingDay: (cuttingDayId: string) => void;
   filterOrders: (options: FilterOptions) => Order[];
-  generateCuttingSummary: () => CuttingSummary;
+  generateCuttingSummary: (cuttingDayId?: string) => CuttingSummary;
+  getCuttingDaySummary: (cuttingDayId: string) => CuttingSummary;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -100,12 +105,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return savedOrders ? JSON.parse(savedOrders) : [];
   });
 
+  const [cuttingDays, setCuttingDays] = useState<CuttingDay[]>(() => {
+    const savedCuttingDays = localStorage.getItem('cuttingDays');
+    return savedCuttingDays ? JSON.parse(savedCuttingDays) : [];
+  });
+
   // Persist data to localStorage
   useEffect(() => {
     localStorage.setItem('clients', JSON.stringify(clients));
     localStorage.setItem('products', JSON.stringify(products));
     localStorage.setItem('orders', JSON.stringify(orders));
-  }, [clients, products, orders]);
+    localStorage.setItem('cuttingDays', JSON.stringify(cuttingDays));
+  }, [clients, products, orders, cuttingDays]);
+
+  // Update cutting days metrics when orders change
+  useEffect(() => {
+    // Skip if no cutting days
+    if (cuttingDays.length === 0) return;
+    
+    // Calculate totals for each cutting day
+    const updatedCuttingDays = cuttingDays.map(day => {
+      const dayOrders = orders.filter(order => order.cuttingDayId === day.id);
+      const totalWeight = dayOrders.reduce((sum, order) => sum + order.totalWeight, 0);
+      
+      return {
+        ...day,
+        totalWeight,
+        orderCount: dayOrders.length
+      };
+    });
+    
+    setCuttingDays(updatedCuttingDays);
+  }, [orders]);
 
   // Client operations
   const addClient = (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -191,6 +222,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success("Commande supprimée");
   };
 
+  // Cutting day operations
+  const addCuttingDay = (cuttingDay: Omit<CuttingDay, 'id' | 'createdAt' | 'updatedAt' | 'totalWeight' | 'orderCount'>) => {
+    const newCuttingDay: CuttingDay = {
+      ...cuttingDay,
+      id: uuidv4(),
+      totalWeight: 0,
+      orderCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setCuttingDays([...cuttingDays, newCuttingDay]);
+    toast.success("Journée de découpe ajoutée avec succès");
+  };
+
+  const updateCuttingDay = (cuttingDayId: string, cuttingDayData: Partial<CuttingDay>) => {
+    setCuttingDays(
+      cuttingDays.map((day) =>
+        day.id === cuttingDayId
+          ? { ...day, ...cuttingDayData, updatedAt: new Date() }
+          : day
+      )
+    );
+    toast.success("Journée de découpe mise à jour");
+  };
+
+  const deleteCuttingDay = (cuttingDayId: string) => {
+    // Check if there are orders associated with this cutting day
+    const hasAssociatedOrders = orders.some(order => order.cuttingDayId === cuttingDayId);
+    
+    if (hasAssociatedOrders) {
+      toast.error("Impossible de supprimer cette journée car des commandes y sont associées");
+      return;
+    }
+    
+    setCuttingDays(cuttingDays.filter((day) => day.id !== cuttingDayId));
+    toast.success("Journée de découpe supprimée");
+  };
+
   // Filter orders based on options
   const filterOrders = (options: FilterOptions): Order[] => {
     let filteredOrders = [...orders];
@@ -227,6 +296,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
     }
 
+    // Apply cutting day filter
+    if (options.cuttingDayId) {
+      filteredOrders = filteredOrders.filter(
+        (order) => order.cuttingDayId === options.cuttingDayId
+      );
+    }
+
     // Apply sorting
     if (options.sortField) {
       filteredOrders.sort((a, b) => {
@@ -250,12 +326,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return filteredOrders;
   };
 
-  // Generate cutting summary
-  const generateCuttingSummary = (): CuttingSummary => {
+  // Generate cutting summary for all orders or filtered by cutting day
+  const generateCuttingSummary = (cuttingDayId?: string): CuttingSummary => {
     const summaryMap = new Map<string, { quantity: number; weight: number }>();
+    
+    // Filter orders by cutting day if specified
+    const ordersToSummarize = cuttingDayId 
+      ? orders.filter(order => order.cuttingDayId === cuttingDayId)
+      : orders;
 
     // Calculate total quantity and weight for each product
-    orders.forEach((order) => {
+    ordersToSummarize.forEach((order) => {
       order.items.forEach((item) => {
         const productName = item.product.name;
         const existing = summaryMap.get(productName) || { quantity: 0, weight: 0 };
@@ -286,10 +367,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
+  // Get cutting summary for a specific cutting day
+  const getCuttingDaySummary = (cuttingDayId: string): CuttingSummary => {
+    return generateCuttingSummary(cuttingDayId);
+  };
+
   const value = {
     clients,
     products,
     orders,
+    cuttingDays,
     addClient,
     updateClient,
     deleteClient,
@@ -299,8 +386,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addOrder,
     updateOrder,
     deleteOrder,
+    addCuttingDay,
+    updateCuttingDay,
+    deleteCuttingDay,
     filterOrders,
     generateCuttingSummary,
+    getCuttingDaySummary,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
