@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, Package, Plus, FileText, Trash2, Edit, CheckSquare, 
-  Search, Eye, Trash2, ChevronDown, ChevronUp, Filter, 
-  Calendar as CalendarComponent, ShoppingCart, Package as PackagePlus, User, Scale, FileText
+  Search, Eye, ChevronDown, ChevronUp, Filter, 
+  User, Scale, ShoppingCart
 } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { useApp } from '@/context/AppContext';
 import { Order, FilterOptions } from '@/types';
 import { formatDate, formatWeight, getStatusColor, translateStatus } from '@/utils/calculations';
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { cn } from '@/lib/utils';
 
 const Orders = () => {
@@ -119,7 +119,7 @@ const Orders = () => {
               variant="outline" 
               onClick={() => navigate('/orders/take')}
             >
-              <PackagePlus className="mr-2 h-4 w-4" />
+              <Package className="mr-2 h-4 w-4" />
               Prise de commande
             </Button>
             <Button onClick={() => navigate('/orders/new')}>
@@ -256,12 +256,11 @@ const Orders = () => {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
+                          <CalendarPicker
                             mode="single"
                             selected={filterOptions.dateFrom}
                             onSelect={(date) => handleDateChange(date, 'from')}
                             initialFocus
-                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
@@ -286,12 +285,11 @@ const Orders = () => {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
+                          <CalendarPicker
                             mode="single"
                             selected={filterOptions.dateTo}
                             onSelect={(date) => handleDateChange(date, 'to')}
                             initialFocus
-                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
@@ -471,3 +469,4 @@ const Orders = () => {
 };
 
 export default Orders;
+
