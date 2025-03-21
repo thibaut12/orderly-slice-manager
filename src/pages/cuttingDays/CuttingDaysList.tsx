@@ -19,18 +19,47 @@ import {
   DialogHeader, DialogTitle, DialogClose 
 } from '@/components/ui/dialog';
 import { formatDate, formatWeight } from '@/utils/formatters';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+
+// Schéma de validation pour le formulaire de journée de découpe
+const cuttingDayFormSchema = z.object({
+  date: z.date({
+    required_error: "Veuillez sélectionner une date",
+  }),
+  description: z.string().optional(),
+});
+
+type CuttingDayFormValues = z.infer<typeof cuttingDayFormSchema>;
 
 const CuttingDaysList = () => {
   const navigate = useNavigate();
-  const { cuttingDays, deleteCuttingDay } = useCuttingDays();
+  const { cuttingDays, addCuttingDay, deleteCuttingDay } = useCuttingDays();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [dayToDelete, setDayToDelete] = useState<string | null>(null);
 
   // Filtered cutting days
   const filteredDays = cuttingDays.filter(day => {
     return formatDate(day.date).toLowerCase().includes(searchTerm.toLowerCase()) ||
            day.description.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  // Formulaire de création
+  const form = useForm<CuttingDayFormValues>({
+    resolver: zodResolver(cuttingDayFormSchema),
+    defaultValues: {
+      date: new Date(),
+      description: "",
+    },
   });
 
   const handleDeleteClick = (dayId: string) => {
@@ -46,6 +75,23 @@ const CuttingDaysList = () => {
     }
   };
 
+  const onSubmit = (data: CuttingDayFormValues) => {
+    addCuttingDay({
+      date: data.date,
+      description: data.description,
+    });
+    setCreateDialogOpen(false);
+    form.reset();
+  };
+
+  const handleCreateClick = () => {
+    form.reset({
+      date: new Date(),
+      description: "",
+    });
+    setCreateDialogOpen(true);
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in">
@@ -56,7 +102,7 @@ const CuttingDaysList = () => {
               Planifiez et gérez vos journées de découpe
             </p>
           </div>
-          <Button onClick={() => navigate('/cutting-days/new')}>
+          <Button onClick={handleCreateClick}>
             <Plus className="mr-2 h-4 w-4" /> Nouvelle journée
           </Button>
         </div>
@@ -97,7 +143,7 @@ const CuttingDaysList = () => {
                   Ajoutez une nouvelle journée de découpe pour commencer.
                 </p>
                 <Button 
-                  onClick={() => navigate('/cutting-days/new')}
+                  onClick={handleCreateClick}
                   className="mt-4"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -179,6 +225,88 @@ const CuttingDaysList = () => {
               Supprimer
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create New Cutting Day Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer une journée de découpe</DialogTitle>
+            <DialogDescription>
+              Ajoutez une nouvelle journée pour organiser vos commandes
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Date de la journée */}
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: fr })
+                            ) : (
+                              <span>Sélectionner une date</span>
+                            )}
+                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Description */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (optionnelle)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Notes ou description..." {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Ajoutez des informations supplémentaires si nécessaire
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Annuler</Button>
+                </DialogClose>
+                <Button type="submit">Créer la journée</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </Layout>
