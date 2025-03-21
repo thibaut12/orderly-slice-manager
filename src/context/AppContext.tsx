@@ -31,7 +31,8 @@ interface AppContextType {
   getCuttingDaySummary: (cuttingDayId: string) => CuttingSummary;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+// Create context with initial empty values
+export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State initialization from localStorage or sample data
@@ -115,6 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
+// Helper hook to use the context
 export const useApp = (): AppContextType => {
   const context = useContext(AppContext);
   if (context === undefined) {
