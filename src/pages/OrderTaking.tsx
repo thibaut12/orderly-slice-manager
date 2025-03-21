@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { CalendarIcon, PackagePlus, Trash2, ShoppingBag, Search, Check } from "lucide-react";
+import { CalendarIcon, Package, Trash2, ShoppingBag, Search, Check } from "lucide-react";
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ const OrderTaking = () => {
   const navigate = useNavigate();
   const { clients, products, addOrder, cuttingDays } = useApp();
   
-  // État local pour la prise de commande
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
@@ -39,16 +37,13 @@ const OrderTaking = () => {
     notes?: string;
   }>>([]);
   
-  // État pour la recherche de produits
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState(products);
   
-  // Calculer le poids total
   const totalWeight = orderItems.reduce((sum, item) => {
     return sum + (item.product.weightPerUnit * item.product.unitQuantity * item.quantity);
   }, 0);
 
-  // Filtrer les produits basé sur le terme de recherche
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredProducts(products);
@@ -61,25 +56,20 @@ const OrderTaking = () => {
     }
   }, [searchTerm, products]);
 
-  // Générer un ID unique pour chaque élément de commande
   const generateItemId = () => {
     return Math.random().toString(36).substring(2, 11);
   };
 
-  // Ajouter un produit à la commande
   const addProductToOrder = (product: Product) => {
-    // Vérifier si le produit existe déjà dans la commande
     const existingItem = orderItems.find(item => item.productId === product.id);
     
     if (existingItem) {
-      // Mettre à jour la quantité si le produit existe déjà
       setOrderItems(orderItems.map(item => 
         item.productId === product.id 
           ? { ...item, quantity: item.quantity + 1 } 
           : item
       ));
     } else {
-      // Ajouter le produit s'il n'existe pas encore
       setOrderItems([
         ...orderItems,
         {
@@ -94,7 +84,6 @@ const OrderTaking = () => {
     toast.success(`${product.name} ajouté à la commande`);
   };
 
-  // Mettre à jour la quantité d'un produit
   const updateItemQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       setOrderItems(orderItems.filter(item => item.id !== itemId));
@@ -107,12 +96,10 @@ const OrderTaking = () => {
     }
   };
 
-  // Supprimer un produit de la commande
   const removeItem = (itemId: string) => {
     setOrderItems(orderItems.filter(item => item.id !== itemId));
   };
 
-  // Mettre à jour les notes d'un produit
   const updateItemNotes = (itemId: string, notes: string) => {
     setOrderItems(orderItems.map(item => 
       item.id === itemId 
@@ -121,7 +108,6 @@ const OrderTaking = () => {
     ));
   };
 
-  // Soumettre la commande
   const handleSubmitOrder = () => {
     if (!selectedClient) {
       toast.error("Veuillez sélectionner un client");
@@ -133,10 +119,18 @@ const OrderTaking = () => {
       return;
     }
 
+    const items = orderItems.map(item => {
+      const itemTotalWeight = item.product.weightPerUnit * item.product.unitQuantity * item.quantity;
+      return {
+        ...item,
+        totalWeight: itemTotalWeight
+      };
+    });
+
     const newOrder = {
       clientId: selectedClient.id,
       client: selectedClient,
-      items: orderItems,
+      items,
       totalWeight,
       status: status as "pending" | "confirmed" | "processing" | "completed" | "cancelled",
       orderDate,
@@ -167,14 +161,12 @@ const OrderTaking = () => {
         <Separator className="my-6" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Colonne 1: Informations de commande */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle>Informations de commande</CardTitle>
               <CardDescription>Sélectionnez un client et complétez les détails</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Sélection du client */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Client</label>
                 <Select 
@@ -203,7 +195,6 @@ const OrderTaking = () => {
                 </Select>
               </div>
 
-              {/* Date de commande */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Date de commande</label>
                 <Popover>
@@ -234,7 +225,6 @@ const OrderTaking = () => {
                 </Popover>
               </div>
 
-              {/* Journée de découpe */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Journée de découpe</label>
                 <CuttingDaySelect
@@ -243,7 +233,6 @@ const OrderTaking = () => {
                 />
               </div>
 
-              {/* Date de livraison */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Date de livraison (optionnelle)</label>
                 <Popover>
@@ -274,7 +263,6 @@ const OrderTaking = () => {
                 </Popover>
               </div>
 
-              {/* Statut */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Statut</label>
                 <Select 
@@ -294,7 +282,6 @@ const OrderTaking = () => {
                 </Select>
               </div>
 
-              {/* Notes */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Notes (optionnelles)</label>
                 <Input 
@@ -304,7 +291,6 @@ const OrderTaking = () => {
                 />
               </div>
 
-              {/* Résumé et validation */}
               <div className="pt-4 space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Poids total:</span>
@@ -325,7 +311,6 @@ const OrderTaking = () => {
             </CardContent>
           </Card>
 
-          {/* Colonne 2: Catalogue de produits */}
           <Card className="lg:col-span-2">
             <CardHeader className="pb-3">
               <CardTitle>Catalogue de produits</CardTitle>
@@ -346,7 +331,7 @@ const OrderTaking = () => {
               <div className="h-[360px] overflow-auto pr-1">
                 {filteredProducts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <PackagePlus className="h-12 w-12 text-muted-foreground opacity-50 mb-4" />
+                    <Package className="h-12 w-12 text-muted-foreground opacity-50 mb-4" />
                     <p className="text-lg font-medium">Aucun produit trouvé</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Essayez un autre terme de recherche
@@ -384,7 +369,6 @@ const OrderTaking = () => {
             </CardContent>
           </Card>
 
-          {/* Colonne 3: Détails de la commande */}
           <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Détails de la commande</CardTitle>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Plus, Search, Eye, Trash2, ChevronDown, ChevronUp, Filter, 
-  Calendar, ShoppingCart, Package, User, Scale, FileText
+  Calendar, Package, Plus, FileText, Trash2, Edit, CheckSquare, 
+  Search, Eye, Trash2, ChevronDown, ChevronUp, Filter, 
+  Calendar as CalendarComponent, ShoppingCart, Package as PackagePlus, User, Scale, FileText
 } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
