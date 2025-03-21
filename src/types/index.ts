@@ -2,8 +2,8 @@
 export interface Product {
   id: string;
   name: string;
-  unitQuantity: number;
-  weightPerUnit: number;
+  unitQuantity: number; // Nombre d'unités (ex: nombre de poches)
+  weightPerUnit: number; // Poids par unité (ex: 150g, 500g)
   weightUnit: 'g' | 'kg';
   packageType: 'sous-vide' | 'en-vrac' | 'autoclave' | 'autre';
   createdAt: Date;
@@ -16,9 +16,9 @@ export interface Client {
   email?: string;
   phone?: string;
   preferences: {
-    cuttingPreferences?: string;
-    packagingPreferences?: string;
-    specialRequests?: string;
+    cuttingPreferences?: string; // Préférences de découpe
+    packagingPreferences?: string; // Préférences d'emballage
+    specialRequests?: string; // Demandes spéciales
   };
   createdAt: Date;
   updatedAt: Date;
@@ -29,8 +29,8 @@ export interface OrderItem {
   productId: string;
   product: Product;
   quantity: number;
-  totalWeight: number;
-  notes?: string;
+  totalWeight: number; // Calculé automatiquement: quantity * product.weightPerUnit * product.unitQuantity
+  notes?: string; // Notes spécifiques à cet élément
 }
 
 export interface Order {
@@ -38,12 +38,12 @@ export interface Order {
   clientId: string;
   client: Client;
   items: OrderItem[];
-  totalWeight: number;
+  totalWeight: number; // Calculé automatiquement: somme des poids des éléments
   status: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled';
   orderDate: Date;
   deliveryDate?: Date;
   notes?: string;
-  cuttingDayId?: string;
+  cuttingDayId?: string; // Référence à la journée de découpe associée
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,8 +52,8 @@ export interface CuttingDay {
   id: string;
   date: Date;
   description?: string;
-  totalWeight: number;
-  orderCount: number;
+  totalWeight: number; // Calculé: somme des poids des commandes associées
+  orderCount: number; // Calculé: nombre de commandes associées
   createdAt: Date;
   updatedAt: Date;
 }
