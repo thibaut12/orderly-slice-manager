@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatWeight, getStatusColor, translateStatus } from '@/utils/formatters';
+import CreateOrderDialog from '@/components/orders/CreateOrderDialog';
 
 const OrdersList = () => {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ const OrdersList = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Filtered orders
   const filteredOrders = orders.filter(order => {
@@ -69,7 +71,7 @@ const OrdersList = () => {
               Gérez toutes vos commandes et suivez leur statut
             </p>
           </div>
-          <Button onClick={() => navigate('/orders/new')}>
+          <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Nouvelle commande
           </Button>
         </div>
@@ -140,7 +142,7 @@ const OrdersList = () => {
                   Ajoutez une nouvelle commande ou modifiez vos filtres de recherche.
                 </p>
                 <Button 
-                  onClick={() => navigate('/orders/new')}
+                  onClick={() => setCreateDialogOpen(true)}
                   className="mt-4"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -230,6 +232,12 @@ const OrdersList = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Order Dialog */}
+      <CreateOrderDialog 
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+      />
     </Layout>
   );
 };
