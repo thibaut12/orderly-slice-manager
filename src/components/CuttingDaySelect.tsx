@@ -73,10 +73,10 @@ const CuttingDaySelect: React.FC<CuttingDaySelectProps> = ({ value, onChange, di
           <SelectValue placeholder="Sélectionner une journée de découpe" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Aucune journée sélectionnée</SelectItem>
+          <SelectItem value="none">Aucune journée sélectionnée</SelectItem>
           
           {relevantCuttingDays.length === 0 ? (
-            <SelectItem value="none" disabled>
+            <SelectItem value="no-days" disabled>
               Aucune journée disponible
             </SelectItem>
           ) : (

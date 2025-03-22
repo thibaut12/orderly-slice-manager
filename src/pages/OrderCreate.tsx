@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { formatWeight } from '@/utils/calculations';
 import CuttingDaySelect from '@/components/CuttingDaySelect';
 
-// Schéma de validation pour le formulaire de commande
 const orderFormSchema = z.object({
   clientId: z.string({
     required_error: "Veuillez sélectionner un client",
@@ -61,7 +59,6 @@ const OrderCreate = () => {
     },
   });
 
-  // Calculer le poids total à chaque changement des éléments de commande
   useEffect(() => {
     let weight = 0;
     orderItems.forEach(item => {
@@ -73,12 +70,10 @@ const OrderCreate = () => {
     setTotalWeight(weight);
   }, [orderItems, products]);
 
-  // Générer un ID unique pour chaque élément de commande
   const generateItemId = () => {
     return Math.random().toString(36).substring(2, 11);
   };
 
-  // Ajouter un nouvel élément de commande
   const handleAddItem = () => {
     if (products.length === 0) {
       toast.error("Aucun produit disponible. Veuillez d'abord ajouter des produits.");
@@ -95,12 +90,10 @@ const OrderCreate = () => {
     ]);
   };
 
-  // Supprimer un élément de commande
   const handleRemoveItem = (itemId: string) => {
     setOrderItems(orderItems.filter(item => item.id !== itemId));
   };
 
-  // Mettre à jour un élément de commande
   const handleItemChange = (itemId: string, field: string, value: string | number) => {
     setOrderItems(orderItems.map(item => {
       if (item.id === itemId) {
@@ -110,7 +103,6 @@ const OrderCreate = () => {
     }));
   };
 
-  // Soumettre le formulaire
   const onSubmit = (data: OrderFormValues) => {
     if (orderItems.length === 0) {
       toast.error("Veuillez ajouter au moins un produit à la commande");
@@ -123,7 +115,6 @@ const OrderCreate = () => {
       return;
     }
 
-    // Préparer les éléments de commande avec les données complètes du produit
     const items = orderItems.map(item => {
       const product = products.find(p => p.id === item.productId);
       if (!product) {
@@ -143,12 +134,10 @@ const OrderCreate = () => {
       };
     }).filter(Boolean);
 
-    // Vérifier si tous les produits ont été trouvés
     if (items.includes(null)) {
       return;
     }
 
-    // Créer la nouvelle commande
     const newOrder = {
       clientId: data.clientId,
       client: selectedClient,
@@ -161,10 +150,8 @@ const OrderCreate = () => {
       cuttingDayId: data.cuttingDayId && data.cuttingDayId !== "" ? data.cuttingDayId : undefined,
     };
 
-    // Ajouter la commande
     addOrder(newOrder);
     
-    // Rediriger vers la liste des commandes
     navigate('/orders');
   };
 
@@ -188,7 +175,6 @@ const OrderCreate = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Informations générales */}
               <Card>
                 <CardHeader>
                   <CardTitle>Informations générales</CardTitle>
@@ -197,7 +183,6 @@ const OrderCreate = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Client */}
                   <FormField
                     control={form.control}
                     name="clientId"
@@ -232,7 +217,6 @@ const OrderCreate = () => {
                     )}
                   />
 
-                  {/* Date de commande */}
                   <FormField
                     control={form.control}
                     name="orderDate"
@@ -273,7 +257,6 @@ const OrderCreate = () => {
                     )}
                   />
 
-                  {/* Journée de découpe */}
                   <FormField
                     control={form.control}
                     name="cuttingDayId"
@@ -281,7 +264,7 @@ const OrderCreate = () => {
                       <FormItem>
                         <FormControl>
                           <CuttingDaySelect
-                            value={field.value || ""}
+                            value={field.value || "none"}
                             onChange={field.onChange}
                           />
                         </FormControl>
@@ -290,7 +273,6 @@ const OrderCreate = () => {
                     )}
                   />
 
-                  {/* Date de livraison (optionnelle) */}
                   <FormField
                     control={form.control}
                     name="deliveryDate"
@@ -331,7 +313,6 @@ const OrderCreate = () => {
                     )}
                   />
 
-                  {/* Statut */}
                   <FormField
                     control={form.control}
                     name="status"
@@ -360,7 +341,6 @@ const OrderCreate = () => {
                     )}
                   />
 
-                  {/* Notes */}
                   <FormField
                     control={form.control}
                     name="notes"
@@ -377,7 +357,6 @@ const OrderCreate = () => {
                 </CardContent>
               </Card>
 
-              {/* Résumé de la commande */}
               <Card>
                 <CardHeader>
                   <CardTitle>Résumé de la commande</CardTitle>
@@ -405,7 +384,6 @@ const OrderCreate = () => {
               </Card>
             </div>
 
-            {/* Produits commandés */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between py-4">
                 <div className="space-y-1">

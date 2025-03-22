@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -58,12 +57,10 @@ const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({ open, onOpenChang
     const existingProductIndex = selectedProducts.findIndex(item => item.productId === productId);
     
     if (existingProductIndex >= 0) {
-      // Increase quantity if product already selected
       const updatedProducts = [...selectedProducts];
       updatedProducts[existingProductIndex].quantity += 1;
       setSelectedProducts(updatedProducts);
     } else {
-      // Add new product
       setSelectedProducts([
         ...selectedProducts,
         {
@@ -224,7 +221,7 @@ const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({ open, onOpenChang
                       <SelectValue placeholder="Sélectionner une journée (optionnel)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Aucune journée sélectionnée</SelectItem>
+                      <SelectItem value="none">Aucune journée sélectionnée</SelectItem>
                       {cuttingDays.map(day => (
                         <SelectItem key={day.id} value={day.id}>
                           {format(new Date(day.date), 'PPP', { locale: fr })}
