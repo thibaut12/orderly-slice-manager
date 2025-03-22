@@ -176,13 +176,11 @@ const Summary = () => {
                     <TableRow key={index}>
                       <TableCell className="font-medium">
                         {item.productName}
-                        {item.unitQuantity > 1 && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({item.unitQuantity} unités)
-                          </span>
-                        )}
                       </TableCell>
-                      <TableCell className="text-right">{item.totalQuantity}</TableCell>
+                      <TableCell className="text-right">
+                        {item.totalQuantity}
+                        {item.unitQuantity > 1 && ` (${item.unitQuantity} unités)`}
+                      </TableCell>
                       <TableCell className="text-right">{formatWeight(item.totalWeight)}</TableCell>
                     </TableRow>
                   ))}
