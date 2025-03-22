@@ -174,7 +174,14 @@ const Summary = () => {
                 <TableBody>
                   {summary.items.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">{item.productName}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.productName}
+                        {item.unitQuantity > 1 && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({item.unitQuantity} unités)
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">{item.totalQuantity}</TableCell>
                       <TableCell className="text-right">{formatWeight(item.totalWeight)}</TableCell>
                     </TableRow>

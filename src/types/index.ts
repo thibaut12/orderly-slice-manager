@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -62,6 +61,7 @@ export interface CuttingSummaryItem {
   productName: string;
   totalQuantity: number;
   totalWeight: number;
+  unitQuantity: number; // Adding the unit quantity information
 }
 
 export interface CuttingSummary {

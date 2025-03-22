@@ -4,7 +4,11 @@ import { CuttingSummary, Order } from '../../types';
 export const useSummaryOperations = (orders: Order[]) => {
   // Generate cutting summary for all orders or filtered by cutting day
   const generateCuttingSummary = (cuttingDayId?: string): CuttingSummary => {
-    const summaryMap = new Map<string, { quantity: number; weight: number }>();
+    const summaryMap = new Map<string, { 
+      quantity: number; 
+      weight: number; 
+      unitQuantity: number; 
+    }>();
     
     // Filter orders by cutting day if specified
     const ordersToSummarize = cuttingDayId 
@@ -15,11 +19,16 @@ export const useSummaryOperations = (orders: Order[]) => {
     ordersToSummarize.forEach((order) => {
       order.items.forEach((item) => {
         const productName = item.product.name;
-        const existing = summaryMap.get(productName) || { quantity: 0, weight: 0 };
+        const existing = summaryMap.get(productName) || { 
+          quantity: 0, 
+          weight: 0, 
+          unitQuantity: item.product.unitQuantity 
+        };
         
         summaryMap.set(productName, {
           quantity: existing.quantity + item.quantity,
           weight: existing.weight + item.totalWeight,
+          unitQuantity: item.product.unitQuantity,
         });
       });
     });
@@ -29,6 +38,7 @@ export const useSummaryOperations = (orders: Order[]) => {
       productName,
       totalQuantity: data.quantity,
       totalWeight: data.weight,
+      unitQuantity: data.unitQuantity,
     }));
 
     // Calculate overall totals
