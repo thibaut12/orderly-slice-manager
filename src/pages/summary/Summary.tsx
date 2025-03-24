@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
-import { ArrowLeft, FileText, BarChart2, Download, Filter, FilePdf } from 'lucide-react';
+import { ArrowLeft, FileText, BarChart2, Download, Filter } from 'lucide-react';
 import { formatDate, formatWeight } from '@/utils/formatters';
 import { CuttingSummary } from '@/types';
 import { toast } from "sonner";
@@ -133,7 +132,7 @@ const Summary = () => {
               <ArrowLeft className="mr-2 h-4 w-4" /> Retour
             </Button>
             <Button variant="outline" onClick={exportToPDF}>
-              <FilePdf className="mr-2 h-4 w-4" /> Export PDF
+              <Download className="mr-2 h-4 w-4" /> Export PDF
             </Button>
             <Button onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" /> Exporter CSV
