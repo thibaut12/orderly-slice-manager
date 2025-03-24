@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Calendar, Info, Package, 
-  FileText, Printer, Download, Edit, Trash2 
+  FileText, Printer, Download, Edit, Trash2, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { useCuttingDays } from '@/hooks/useCuttingDays';
@@ -11,7 +11,7 @@ import { useOrders } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
@@ -21,6 +21,9 @@ import {
   DialogHeader, DialogTitle, DialogClose 
 } from '@/components/ui/dialog';
 import { formatDate, formatWeight, translateStatus } from '@/utils/formatters';
+import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const CuttingDayDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +33,7 @@ const CuttingDayDetail = () => {
   const [cuttingDay, setCuttingDay] = useState<any | null>(null);
   const [relatedOrders, setRelatedOrders] = useState<any[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     if (id && cuttingDays.length > 0) {
@@ -53,6 +57,91 @@ const CuttingDayDetail = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const toggleOrderDetails = (orderId: string) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
+  };
+
+  const exportAllOrdersToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(16);
+      doc.text(`Commandes pour la journée du ${formatDate(cuttingDay?.date || new Date())}`, 14, 20);
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.text(`Document généré le: ${new Date().toLocaleDateString('fr-FR')}`, 14, 30);
+      
+      // Add summary info
+      doc.text(`Nombre de commandes: ${relatedOrders.length}`, 14, 40);
+      doc.text(`Poids total: ${formatWeight(cuttingDay?.totalWeight || 0)}`, 14, 45);
+      
+      let yPos = 60;
+      
+      // For each order, create a section in the PDF
+      relatedOrders.forEach((order, index) => {
+        // Add space between orders
+        if (index > 0) {
+          yPos += 10;
+        }
+        
+        // Order header
+        doc.setFontSize(14);
+        doc.text(`Commande #${order.id.slice(0, 8)} - ${order.client.name}`, 14, yPos);
+        yPos += 10;
+        
+        // Order info
+        doc.setFontSize(10);
+        doc.text(`Date: ${formatDate(order.orderDate)}`, 14, yPos);
+        yPos += 5;
+        doc.text(`Statut: ${translateStatus(order.status)}`, 14, yPos);
+        yPos += 5;
+        doc.text(`Poids total: ${formatWeight(order.totalWeight)}`, 14, yPos);
+        yPos += 10;
+        
+        // Order items table
+        const orderItems = order.items.map((item: any) => [
+          item.product.name,
+          item.product.packageType,
+          item.quantity.toString(),
+          formatWeight(item.product.weightPerUnit * item.product.unitQuantity),
+          formatWeight(item.totalWeight)
+        ]);
+        
+        autoTable(doc, {
+          head: [['Produit', 'Conditionnement', 'Quantité', 'Poids unitaire', 'Poids total']],
+          body: orderItems,
+          startY: yPos,
+          theme: 'grid',
+          headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+          alternateRowStyles: { fillColor: [245, 245, 245] }
+        });
+        
+        // Update position for next order
+        yPos = (doc as any).lastAutoTable.finalY + 15;
+        
+        // Check if we need a new page
+        if (yPos > 270 && index < relatedOrders.length - 1) {
+          doc.addPage();
+          yPos = 20;
+        }
+      });
+      
+      // Save the PDF
+      const date = new Date().toISOString().slice(0, 10);
+      doc.save(`commandes-${date}.pdf`);
+      
+      toast.success("Commandes exportées en PDF avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'export PDF:", error);
+      toast.error("Erreur lors de l'export PDF");
+    }
   };
 
   if (!cuttingDay) {
@@ -159,8 +248,8 @@ const CuttingDayDetail = () => {
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> Imprimer
           </Button>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" /> Exporter en PDF
+          <Button variant="outline" onClick={exportAllOrdersToPDF}>
+            <Download className="mr-2 h-4 w-4" /> Exporter toutes les commandes en PDF
           </Button>
         </div>
 
@@ -182,40 +271,107 @@ const CuttingDayDetail = () => {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Date de commande</TableHead>
-                    <TableHead>Produits</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Poids</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {relatedOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.client.name}</TableCell>
-                      <TableCell>{formatDate(order.orderDate)}</TableCell>
-                      <TableCell>{order.items.length} produit(s)</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{translateStatus(order.status)}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{formatWeight(order.totalWeight)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/orders/${order.id}`)}
-                        >
-                          Voir
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-4">
+                {relatedOrders.map((order) => (
+                  <Card key={order.id} className="border border-muted">
+                    <CardHeader className="px-4 py-3 bg-muted/20">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base font-medium">{order.client.name}</h3>
+                            <Badge variant="outline">{translateStatus(order.status)}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Commande #{order.id.slice(0, 8)} • {formatDate(order.orderDate)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{formatWeight(order.totalWeight)}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => toggleOrderDetails(order.id)}
+                            className="p-1 h-8 w-8"
+                          >
+                            {expandedOrders[order.id] ? 
+                              <ChevronUp className="h-4 w-4" /> : 
+                              <ChevronDown className="h-4 w-4" />
+                            }
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    {expandedOrders[order.id] && (
+                      <CardContent className="px-4 py-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Produit</TableHead>
+                              <TableHead>Conditionnement</TableHead>
+                              <TableHead className="text-right">Quantité</TableHead>
+                              <TableHead className="text-right">Poids unitaire</TableHead>
+                              <TableHead className="text-right">Poids total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {order.items.map((item: any) => (
+                              <TableRow key={item.id}>
+                                <TableCell className="font-medium">{item.product.name}</TableCell>
+                                <TableCell>{item.product.packageType}</TableCell>
+                                <TableCell className="text-right">{item.quantity}</TableCell>
+                                <TableCell className="text-right">
+                                  {formatWeight(item.product.weightPerUnit * item.product.unitQuantity)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatWeight(item.totalWeight)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-right font-bold">
+                                Total
+                              </TableCell>
+                              <TableCell className="text-right font-bold">
+                                {formatWeight(order.totalWeight)}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                        
+                        {order.notes && (
+                          <div className="mt-4 p-3 bg-muted/20 rounded-md">
+                            <h4 className="font-medium mb-1">Notes:</h4>
+                            <p className="text-sm">{order.notes}</p>
+                          </div>
+                        )}
+                        
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/orders/${order.id}`)}
+                          >
+                            Voir détails complets
+                          </Button>
+                        </div>
+                      </CardContent>
+                    )}
+                    
+                    <CardFooter className="px-4 py-2 bg-muted/10 flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        {order.items.length} produit(s)
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/orders/${order.id}`)}
+                      >
+                        Voir
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
