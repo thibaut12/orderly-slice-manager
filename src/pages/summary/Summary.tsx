@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -6,9 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
-import { ArrowLeft, FileText, BarChart2, Download, Filter } from 'lucide-react';
+import { ArrowLeft, FileText, BarChart2, Download, Filter, FilePdf } from 'lucide-react';
 import { formatDate, formatWeight } from '@/utils/formatters';
 import { CuttingSummary } from '@/types';
+import { toast } from "sonner";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Summary = () => {
   const navigate = useNavigate();
@@ -55,6 +59,64 @@ const Summary = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  const exportToPDF = () => {
+    if (!summary) return;
+
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      const title = selectedCuttingDay === 'all' 
+        ? 'Synthèse - Toutes les commandes' 
+        : `Synthèse - Journée du ${formatDate(cuttingDays.find(day => day.id === selectedCuttingDay)?.date || new Date())}`;
+      
+      doc.setFontSize(16);
+      doc.text(title, 14, 20);
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.text(`Document généré le: ${new Date().toLocaleDateString('fr-FR')}`, 14, 30);
+      
+      // Add summary info
+      doc.text(`Commandes totales: ${orders.length}`, 14, 40);
+      doc.text(`Produits totaux: ${summary.totalProducts}`, 14, 45);
+      doc.text(`Poids total: ${formatWeight(summary.totalWeight)}`, 14, 50);
+      
+      // Create a table for product details
+      const tableData = summary.items.map(item => [
+        item.productName,
+        (item.totalQuantity * item.unitQuantity).toString(),
+        formatWeight(item.totalWeight)
+      ]);
+      
+      // Add the total row
+      tableData.push([
+        'Total',
+        summary.totalProducts.toString(),
+        formatWeight(summary.totalWeight)
+      ]);
+      
+      autoTable(doc, {
+        head: [['Produit', 'Quantité', 'Poids']],
+        body: tableData,
+        startY: 60,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        footStyles: { fillColor: [220, 220, 220] },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+      });
+      
+      // Save the PDF
+      const date = new Date().toISOString().slice(0, 10);
+      doc.save(`synthese-produits-${date}.pdf`);
+      
+      toast.success("Synthèse exportée en PDF avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'export PDF:", error);
+      toast.error("Erreur lors de l'export PDF");
+    }
+  };
   
   return (
     <Layout>
@@ -70,8 +132,11 @@ const Summary = () => {
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Retour
             </Button>
+            <Button variant="outline" onClick={exportToPDF}>
+              <FilePdf className="mr-2 h-4 w-4" /> Export PDF
+            </Button>
             <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Exporter
+              <Download className="mr-2 h-4 w-4" /> Exporter CSV
             </Button>
           </div>
         </div>
