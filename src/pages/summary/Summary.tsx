@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -178,8 +177,7 @@ const Summary = () => {
                         {item.productName}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.totalQuantity}
-                        {item.unitQuantity > 1 && ` (${item.unitQuantity} unités)`}
+                        {item.totalQuantity * item.unitQuantity}
                       </TableCell>
                       <TableCell className="text-right">{formatWeight(item.totalWeight)}</TableCell>
                     </TableRow>
