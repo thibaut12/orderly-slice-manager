@@ -21,6 +21,7 @@ import {
   DialogHeader, DialogTitle, DialogClose 
 } from '@/components/ui/dialog';
 import { formatDate, formatWeight, translateStatus } from '@/utils/formatters';
+import { useSummaryOperations } from '@/context/hooks/useSummaryOperations';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -30,6 +31,7 @@ const CuttingDayDetail = () => {
   const navigate = useNavigate();
   const { cuttingDays, deleteCuttingDay } = useCuttingDays();
   const { orders } = useOrders();
+  const { getCuttingDaySummary } = useSummaryOperations(orders);
   const [cuttingDay, setCuttingDay] = useState<any | null>(null);
   const [relatedOrders, setRelatedOrders] = useState<any[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,6 +66,156 @@ const CuttingDayDetail = () => {
       ...prev,
       [orderId]: !prev[orderId]
     }));
+  };
+
+  // Nouvelle fonction pour exporter un résumé compact en PDF
+  const exportSummaryToPDF = () => {
+    try {
+      if (!id) return;
+      
+      // Obtenir le résumé des produits pour cette journée de découpe
+      const summary = getCuttingDaySummary(id);
+      
+      // Créer un nouveau document PDF en format A4
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Définir les couleurs et styles
+      const headerBgColor = [74, 144, 206]; // Bleu
+      const headerTextColor = [255, 255, 255]; // Blanc
+      const altRowColor = [240, 245, 250]; // Bleu très clair
+      
+      // Ajouter un titre
+      doc.setFontSize(18);
+      doc.setTextColor(40, 40, 40);
+      doc.text(`RÉCAPITULATIF DE DÉCOUPE - ${formatDate(cuttingDay?.date || new Date())}`, doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+      
+      // Sous-titre avec informations générales
+      doc.setFontSize(10);
+      doc.text(`Document généré le: ${new Date().toLocaleDateString('fr-FR')}`, 10, 22);
+      doc.text(`Nombre total de commandes: ${relatedOrders.length}`, 10, 27);
+      doc.text(`Poids total: ${formatWeight(cuttingDay?.totalWeight || 0)}`, 10, 32);
+      
+      // Regrouper tous les produits par client
+      const clientProducts = {};
+      relatedOrders.forEach(order => {
+        if (!clientProducts[order.client.name]) {
+          clientProducts[order.client.name] = [];
+        }
+        
+        order.items.forEach(item => {
+          const existingProduct = clientProducts[order.client.name].find(
+            p => p.productName === item.product.name
+          );
+          
+          if (existingProduct) {
+            existingProduct.quantity += item.quantity;
+            existingProduct.totalWeight += item.totalWeight;
+          } else {
+            clientProducts[order.client.name].push({
+              productName: item.product.name,
+              packageType: item.product.packageType,
+              quantity: item.quantity,
+              weightPerUnit: item.product.weightPerUnit * item.product.unitQuantity,
+              totalWeight: item.totalWeight
+            });
+          }
+        });
+      });
+      
+      // Obtenir les noms uniques de tous les produits pour créer les colonnes
+      const allProductNames = new Set();
+      Object.values(clientProducts).forEach((products: any[]) => {
+        products.forEach(p => allProductNames.add(p.productName));
+      });
+      
+      // Créer les en-têtes de colonnes
+      const headers = [['Client']];
+      allProductNames.forEach(name => {
+        headers[0].push(String(name));
+      });
+      headers[0].push('Poids total');
+      
+      // Préparer les données pour le tableau
+      const body = [];
+      Object.entries(clientProducts).forEach(([clientName, products]: [string, any[]]) => {
+        const row = [clientName];
+        
+        // Pour chaque produit possible, ajouter la quantité ou laisser vide
+        allProductNames.forEach(productName => {
+          const product = products.find(p => p.productName === productName);
+          row.push(product ? product.quantity.toString() : '');
+        });
+        
+        // Ajouter le poids total pour ce client
+        const totalClientWeight = products.reduce((sum, p) => sum + p.totalWeight, 0);
+        row.push(formatWeight(totalClientWeight));
+        
+        body.push(row);
+      });
+      
+      // Ajouter une ligne de total
+      const totalsRow = ['TOTAL'];
+      let columnIndex = 1;
+      allProductNames.forEach(productName => {
+        let totalQuantity = 0;
+        Object.values(clientProducts).forEach((products: any[]) => {
+          const product = products.find(p => p.productName === productName);
+          if (product) {
+            totalQuantity += product.quantity;
+          }
+        });
+        totalsRow.push(totalQuantity > 0 ? totalQuantity.toString() : '');
+        columnIndex++;
+      });
+      
+      // Ajouter le poids total global
+      totalsRow.push(formatWeight(cuttingDay?.totalWeight || 0));
+      body.push(totalsRow);
+      
+      // Ajouter le tableau au PDF
+      autoTable(doc, {
+        head: headers,
+        body: body,
+        startY: 40,
+        theme: 'grid',
+        headStyles: { 
+          fillColor: headerBgColor, 
+          textColor: headerTextColor,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        alternateRowStyles: { fillColor: altRowColor },
+        // Style spécial pour la dernière ligne (totaux)
+        willDrawRow: (data) => {
+          if (data.row.index === body.length - 1) {
+            doc.setFillColor(220, 230, 240);
+            doc.setTextColor(0, 0, 0);
+            doc.setFontStyle('bold');
+          }
+        }
+      });
+      
+      // Ajouter des notes en bas de page
+      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFontSize(10);
+      doc.text('Notes:', 10, finalY);
+      doc.setFontSize(9);
+      doc.text('Ce document est un récapitulatif des commandes pour cette journée de découpe.', 10, finalY + 5);
+      doc.text('Pour plus de détails, veuillez consulter les fiches de commandes individuelles.', 10, finalY + 10);
+      
+      // Sauvegarder le PDF
+      const date = new Date().toISOString().slice(0, 10);
+      doc.save(`recap-decoupes-${date}.pdf`);
+      
+      toast.success("Récapitulatif exporté en PDF avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'export PDF:", error);
+      toast.error("Erreur lors de l'export PDF");
+    }
   };
 
   const exportAllOrdersToPDF = () => {
@@ -244,12 +396,15 @@ const CuttingDayDetail = () => {
         </div>
 
         {/* Print & Export Actions */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> Imprimer
           </Button>
           <Button variant="outline" onClick={exportAllOrdersToPDF}>
-            <Download className="mr-2 h-4 w-4" /> Exporter toutes les commandes en PDF
+            <Download className="mr-2 h-4 w-4" /> Exporter détails commandes
+          </Button>
+          <Button variant="outline" onClick={exportSummaryToPDF}>
+            <Download className="mr-2 h-4 w-4" /> Exporter récapitulatif compact
           </Button>
         </div>
 
