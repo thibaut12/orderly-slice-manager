@@ -32,7 +32,7 @@ const OrderDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   
   // Edit form state
-  const [editedStatus, setEditedStatus] = useState('');
+  const [editedStatus, setEditedStatus] = useState<"pending" | "confirmed" | "processing" | "completed" | "cancelled">('pending');
   const [editedNotes, setEditedNotes] = useState('');
   const [editedDeliveryDate, setEditedDeliveryDate] = useState('');
   const [editedItems, setEditedItems] = useState<OrderItem[]>([]);

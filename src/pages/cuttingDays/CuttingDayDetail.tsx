@@ -84,9 +84,9 @@ const CuttingDayDetail = () => {
       });
       
       // Définir les couleurs et styles
-      const headerBgColor = [74, 144, 206]; // Bleu
-      const headerTextColor = [255, 255, 255]; // Blanc
-      const altRowColor = [240, 245, 250]; // Bleu très clair
+      const headerBgColor = [74, 144, 206, 255]; // RGBA blue
+      const headerTextColor = [255, 255, 255, 255]; // RGBA white
+      const altRowColor = [240, 245, 250, 255]; // RGBA light blue
       
       // Ajouter un titre
       doc.setFontSize(18);
@@ -194,7 +194,8 @@ const CuttingDayDetail = () => {
           if (data.row.index === body.length - 1) {
             doc.setFillColor(220, 230, 240);
             doc.setTextColor(0, 0, 0);
-            doc.setFontStyle('bold');
+            // Use 'bold' directly for font style
+            doc.setFont(undefined, 'bold');
           }
         }
       });
@@ -271,8 +272,8 @@ const CuttingDayDetail = () => {
           body: orderItems,
           startY: yPos,
           theme: 'grid',
-          headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-          alternateRowStyles: { fillColor: [245, 245, 245] }
+          headStyles: { fillColor: [41, 128, 185, 255], textColor: 255 },
+          alternateRowStyles: { fillColor: [245, 245, 245, 255] }
         });
         
         // Update position for next order
