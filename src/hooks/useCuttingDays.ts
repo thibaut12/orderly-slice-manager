@@ -27,6 +27,14 @@ export const useCuttingDays = () => {
     updateCuttingDay(id, { status });
   };
   
+  // Fonction pour obtenir les commandes actives (des journées en cours)
+  const getActiveOrders = () => {
+    const activeDayIds = getActiveCuttingDays().map(day => day.id);
+    return context.orders.filter(order => 
+      order.cuttingDayId && activeDayIds.includes(order.cuttingDayId)
+    );
+  };
+  
   return {
     cuttingDays,
     addCuttingDay,
@@ -34,6 +42,7 @@ export const useCuttingDays = () => {
     deleteCuttingDay,
     getActiveCuttingDays,
     getCompletedCuttingDays,
-    changeCuttingDayStatus
+    changeCuttingDayStatus,
+    getActiveOrders
   };
 };

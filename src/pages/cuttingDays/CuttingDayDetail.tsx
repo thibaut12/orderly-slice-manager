@@ -1,312 +1,135 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Calendar, Info, Package, 
-  FileText, Printer, Download, Edit, Trash2, ChevronDown, ChevronUp,
-  CheckSquare, Square
-} from 'lucide-react';
-import Layout from '@/components/layout/Layout';
-import { useCuttingDays } from '@/hooks/useCuttingDays';
-import { useOrders } from '@/hooks/useOrders';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ArrowLeft, Edit, FileText, List, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from '@/components/ui/table';
+import { useApp } from '@/context/AppContext';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
   DialogHeader, DialogTitle, DialogClose 
 } from '@/components/ui/dialog';
-import { formatDate, formatWeight } from '@/utils/formatters';
-import { useSummaryOperations } from '@/context/hooks/useSummaryOperations';
-import { toast } from 'sonner';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { formatDate, formatWeight } from '@/utils/calculations';
+import Layout from '@/components/Layout';
+import { CuttingDay, Order } from '@/types';
+import { toast } from "sonner";
 
 const CuttingDayDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { cuttingDays, deleteCuttingDay, updateCuttingDay } = useCuttingDays();
-  const { orders } = useOrders();
-  const { getCuttingDaySummary } = useSummaryOperations(orders);
-  const [cuttingDay, setCuttingDay] = useState<any | null>(null);
-  const [relatedOrders, setRelatedOrders] = useState<any[]>([]);
+  const { cuttingDays, updateCuttingDay, deleteCuttingDay, orders, generateCuttingSummary } = useApp();
+  const [cuttingDay, setCuttingDay] = useState<CuttingDay | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [expandedOrders, setExpandedOrders] = useState<{ [key: string]: boolean }>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedDate, setEditedDate] = useState<Date | undefined>(undefined);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (id && cuttingDays.length > 0) {
-      const day = cuttingDays.find(d => d.id === id);
-      if (day) {
-        setCuttingDay(day);
-        
-        // Find orders associated with this cutting day
-        const dayOrders = orders.filter(order => order.cuttingDayId === id);
-        setRelatedOrders(dayOrders);
+    if (id) {
+      const foundCuttingDay = cuttingDays.find(day => day.id === id);
+      setCuttingDay(foundCuttingDay || null);
+      if (foundCuttingDay) {
+        setEditedDescription(foundCuttingDay.description || '');
+        setEditedDate(new Date(foundCuttingDay.date));
       }
     }
-  }, [id, cuttingDays, orders]);
+  }, [id, cuttingDays]);
 
   const handleDeleteCuttingDay = () => {
-    if (id) {
-      deleteCuttingDay(id);
+    if (cuttingDay) {
+      deleteCuttingDay(cuttingDay.id);
       navigate('/cutting-days');
+      toast.success("Journée de découpe supprimée avec succès");
     }
   };
 
-  const handleToggleStatus = () => {
-    if (id && cuttingDay) {
-      const newStatus = cuttingDay.status === 'en-cours' ? 'termine' : 'en-cours';
-      updateCuttingDay(id, { status: newStatus });
-      setCuttingDay({ ...cuttingDay, status: newStatus });
+  const handleSaveChanges = async () => {
+    if (!cuttingDay) return;
+
+    const updatedCuttingDayData = {
+      description: editedDescription,
+      date: editedDate ? editedDate.toISOString() : cuttingDay.date,
+    };
+
+    updateCuttingDay(cuttingDay.id, updatedCuttingDayData);
+    setIsEditing(false);
+    toast.success("Journée de découpe mise à jour avec succès");
+  };
+
+  const handleCancelEdit = () => {
+    if (cuttingDay) {
+      setEditedDescription(cuttingDay.description || '');
+      setEditedDate(new Date(cuttingDay.date));
     }
+    setIsEditing(false);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const toggleOrderDetails = (orderId: string) => {
-    setExpandedOrders(prev => ({
-      ...prev,
-      [orderId]: !prev[orderId]
-    }));
-  };
-
-  // Nouvelle fonction pour exporter un résumé compact en PDF
-  const exportSummaryToPDF = () => {
+  const handleGenerateSummary = async () => {
+    if (!cuttingDay) return;
+    setIsGeneratingSummary(true);
     try {
-      if (!id) return;
-      
-      // Obtenir le résumé des produits pour cette journée de découpe
-      const summary = getCuttingDaySummary(id);
-      
-      // Créer un nouveau document PDF en format A4
-      const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Définir les couleurs et styles (corriger le typage)
-      const headerBgColor = [74, 144, 206] as [number, number, number];
-      const headerTextColor = [255, 255, 255] as [number, number, number];
-      const altRowColor = [240, 245, 250] as [number, number, number];
-      
-      // Ajouter un titre
-      doc.setFontSize(18);
-      doc.setTextColor(headerTextColor[0], headerTextColor[1], headerTextColor[2]);
-      doc.text(`RÉCAPITULATIF DE DÉCOUPE - ${formatDate(cuttingDay?.date || new Date())}`, doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-      
-      // Sous-titre avec informations générales
-      doc.setFontSize(10);
-      doc.text(`Document généré le: ${new Date().toLocaleDateString('fr-FR')}`, 10, 22);
-      doc.text(`Nombre total de commandes: ${relatedOrders.length}`, 10, 27);
-      doc.text(`Poids total: ${formatWeight(cuttingDay?.totalWeight || 0)}`, 10, 32);
-      
-      // Regrouper tous les produits par client
-      const clientProducts = {};
-      relatedOrders.forEach(order => {
-        if (!clientProducts[order.client.name]) {
-          clientProducts[order.client.name] = [];
-        }
-        
-        order.items.forEach(item => {
-          const existingProduct = clientProducts[order.client.name].find(
-            p => p.productName === item.product.name
-          );
-          
-          if (existingProduct) {
-            existingProduct.quantity += item.quantity;
-            existingProduct.totalWeight += item.totalWeight;
-          } else {
-            clientProducts[order.client.name].push({
-              productName: item.product.name,
-              packageType: item.product.packageType,
-              quantity: item.quantity,
-              weightPerUnit: item.product.weightPerUnit * item.product.unitQuantity,
-              totalWeight: item.totalWeight
-            });
-          }
-        });
-      });
-      
-      // Obtenir les noms uniques de tous les produits pour créer les colonnes
-      const allProductNames = new Set();
-      Object.values(clientProducts).forEach((products: any[]) => {
-        products.forEach(p => allProductNames.add(p.productName));
-      });
-      
-      // Créer les en-têtes de colonnes
-      const headers = [['Client']];
-      allProductNames.forEach(name => {
-        headers[0].push(String(name));
-      });
-      headers[0].push('Poids total');
-      
-      // Préparer les données pour le tableau
-      const body = [];
-      Object.entries(clientProducts).forEach(([clientName, products]: [string, any[]]) => {
-        const row = [clientName];
-        
-        // Pour chaque produit possible, ajouter la quantité ou laisser vide
-        allProductNames.forEach(productName => {
-          const product = products.find(p => p.productName === productName);
-          row.push(product ? product.quantity.toString() : '');
-        });
-        
-        // Ajouter le poids total pour ce client
-        const totalClientWeight = products.reduce((sum, p) => sum + p.totalWeight, 0);
-        row.push(formatWeight(totalClientWeight));
-        
-        body.push(row);
-      });
-      
-      // Ajouter une ligne de total
-      const totalsRow = ['TOTAL'];
-      let columnIndex = 1;
-      allProductNames.forEach(productName => {
-        let totalQuantity = 0;
-        Object.values(clientProducts).forEach((products: any[]) => {
-          const product = products.find(p => p.productName === productName);
-          if (product) {
-            totalQuantity += product.quantity;
-          }
-        });
-        totalsRow.push(totalQuantity > 0 ? totalQuantity.toString() : '');
-        columnIndex++;
-      });
-      
-      // Ajouter le poids total global
-      totalsRow.push(formatWeight(cuttingDay?.totalWeight || 0));
-      body.push(totalsRow);
-      
-      // Ajouter le tableau au PDF avec options corrigées pour le typage
-      autoTable(doc, {
-        head: headers,
-        body: body,
-        startY: 40,
-        theme: 'grid',
-        headStyles: { 
-          fillColor: headerBgColor,
-          textColor: headerTextColor,
-          fontStyle: 'bold',
-          halign: 'center'
-        },
-        alternateRowStyles: { fillColor: altRowColor },
-        didDrawRow: (data) => {
-          if (data.row.index === body.length - 1) {
-            doc.setFillColor(220, 230, 240);
-            doc.setTextColor(0, 0, 0);
-            doc.setFont(undefined, 'bold');
-          }
-        }
-      });
-      
-      // Ajouter des notes en bas de page
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
-      doc.setFontSize(10);
-      doc.text('Notes:', 10, finalY);
-      doc.setFontSize(9);
-      doc.text('Ce document est un récapitulatif des commandes pour cette journée de découpe.', 10, finalY + 5);
-      doc.text('Pour plus de détails, veuillez consulter les fiches de commandes individuelles.', 10, finalY + 10);
-      
-      // Sauvegarder le PDF
-      const date = new Date().toISOString().slice(0, 10);
-      doc.save(`recap-decoupes-${date}.pdf`);
-      
-      toast.success("Récapitulatif exporté en PDF avec succès");
+      const generatedSummary = generateCuttingSummary(cuttingDay.id);
+      setSummary(generatedSummary);
+      toast.success("Synthèse générée avec succès");
     } catch (error) {
-      console.error("Erreur lors de l'export PDF:", error);
-      toast.error("Erreur lors de l'export PDF");
+      console.error("Error generating summary:", error);
+      toast.error("Erreur lors de la génération de la synthèse");
+    } finally {
+      setIsGeneratingSummary(false);
     }
   };
 
-  const exportAllOrdersToPDF = () => {
-    try {
-      const doc = new jsPDF();
-      
-      // Add title
-      doc.setFontSize(16);
-      doc.text(`Commandes pour la journée du ${formatDate(cuttingDay?.date || new Date())}`, 14, 20);
-      
-      // Add date
-      doc.setFontSize(10);
-      doc.text(`Document généré le: ${new Date().toLocaleDateString('fr-FR')}`, 14, 30);
-      
-      // Add summary info
-      doc.text(`Nombre de commandes: ${relatedOrders.length}`, 14, 40);
-      doc.text(`Poids total: ${formatWeight(cuttingDay?.totalWeight || 0)}`, 14, 45);
-      
-      let yPos = 60;
-      
-      // For each order, create a section in the PDF
-      relatedOrders.forEach((order, index) => {
-        // Add space between orders
-        if (index > 0) {
-          yPos += 10;
-        }
-        
-        // Order header
-        doc.setFontSize(14);
-        doc.text(`Commande #${order.id.slice(0, 8)} - ${order.client.name}`, 14, yPos);
-        yPos += 10;
-        
-        // Order info
-        doc.setFontSize(10);
-        doc.text(`Date: ${formatDate(order.orderDate)}`, 14, yPos);
-        yPos += 5;
-        doc.text(`Poids total: ${formatWeight(order.totalWeight)}`, 14, yPos);
-        yPos += 10;
-        
-        // Order items table
-        const orderItems = order.items.map((item: any) => [
-          item.product.name,
-          item.product.packageType,
-          item.quantity.toString(),
-          formatWeight(item.product.weightPerUnit * item.product.unitQuantity),
-          formatWeight(item.totalWeight)
-        ]);
-        
-        autoTable(doc, {
-          head: [['Produit', 'Conditionnement', 'Quantité', 'Poids unitaire', 'Poids total']],
-          body: orderItems,
-          startY: yPos,
-          theme: 'grid',
-          headStyles: { fillColor: [41, 128, 185] as [number, number, number], textColor: [255, 255, 255] as [number, number, number] },
-          alternateRowStyles: { fillColor: [245, 245, 245] as [number, number, number] }
-        });
-        
-        // Update position for next order
-        yPos = (doc as any).lastAutoTable.finalY + 15;
-        
-        // Check if we need a new page
-        if (yPos > 270 && index < relatedOrders.length - 1) {
-          doc.addPage();
-          yPos = 20;
-        }
-      });
-      
-      // Save the PDF
-      const date = new Date().toISOString().slice(0, 10);
-      doc.save(`commandes-${date}.pdf`);
-      
-      toast.success("Commandes exportées en PDF avec succès");
-    } catch (error) {
-      console.error("Erreur lors de l'export PDF:", error);
-      toast.error("Erreur lors de l'export PDF");
+  const handleDownloadSummary = () => {
+    if (!summary) {
+      toast.error("Aucune synthèse à télécharger. Veuillez générer une synthèse d'abord.");
+      return;
     }
-  };
 
-  // Function to get status badge
-  const getStatusBadge = (status: 'en-cours' | 'termine') => {
-    return status === 'en-cours' 
-      ? <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">En cours</Badge>
-      : <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Terminé</Badge>;
+    const doc = new jsPDF();
+    
+    // Titre du document
+    doc.setFontSize(18);
+    doc.text(`Synthèse de la journée de découpe du ${formatDate(new Date(summary.generatedAt))}`, 14, 22);
+    
+    // Informations générales
+    doc.setFontSize(12);
+    doc.text(`Généré le: ${formatDate(new Date(summary.generatedAt))}`, 14, 30);
+    doc.text(`Nombre total de produits: ${summary.totalProducts}`, 14, 36);
+    doc.text(`Poids total: ${formatWeight(summary.totalWeight)}`, 14, 42);
+
+    // Préparation des données pour le tableau
+    const tableData = summary.items.map(item => [
+      item.productName,
+      item.totalQuantity,
+      formatWeight(item.totalWeight),
+      item.unitQuantity,
+    ]);
+
+    // Configuration du tableau
+    autoTable(doc, {
+      head: [['Produit', 'Quantité Totale', 'Poids Total', 'Quantité par Unité']],
+      body: tableData,
+      startY: 50,
+    });
+
+    // Téléchargement du PDF
+    doc.save(`synthese_decoupe_${format(new Date(summary.generatedAt), 'yyyyMMdd_HHmmss')}.pdf`);
+    toast.success("Synthèse téléchargée avec succès");
   };
 
   if (!cuttingDay) {
@@ -325,259 +148,249 @@ const CuttingDayDetail = () => {
     );
   }
 
+  const cuttingDayOrders = orders.filter(order => order.cuttingDayId === cuttingDay.id);
+
   return (
     <Layout>
       <div className="animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Journée de découpe</h1>
-            <div className="text-muted-foreground flex items-center space-x-2">
-              <Calendar className="mr-2 h-4 w-4" /> 
-              <span>{formatDate(cuttingDay.date)}</span>
-              {getStatusBadge(cuttingDay.status)}
-            </div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Journée de découpe du {formatDate(new Date(cuttingDay.date))}
+            </h1>
+            <p className="text-muted-foreground">
+              Gérez les détails de cette journée de découpe.
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/cutting-days')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Retour
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleToggleStatus}
-            >
-              {cuttingDay.status === 'en-cours' 
-                ? <><CheckSquare className="mr-2 h-4 w-4" />Marquer comme terminé</>
-                : <><Square className="mr-2 h-4 w-4" />Reprendre</>
-              }
-            </Button>
-            <Button 
-              variant="outline" 
-              className="text-destructive hover:text-destructive"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-            </Button>
-            <Button onClick={() => navigate(`/cutting-days/edit/${cuttingDay.id}`)}>
-              <Edit className="mr-2 h-4 w-4" /> Modifier
-            </Button>
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={handleCancelEdit}>
+                  <X className="mr-2 h-4 w-4" /> Annuler
+                </Button>
+                <Button onClick={handleSaveChanges}>
+                  <Edit className="mr-2 h-4 w-4" /> Enregistrer
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                </Button>
+                <Button onClick={() => setIsEditing(true)}>
+                  <Edit className="mr-2 h-4 w-4" /> Modifier
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
         <Separator className="my-6" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* Basic Info */}
-          <Card>
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <div className="flex items-center">
-                <Info className="mr-2 h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Informations</CardTitle>
-              </div>
+        {isEditing ? (
+          <Card className="space-y-4">
+            <CardHeader>
+              <CardTitle>Modifier la journée de découpe</CardTitle>
+              <CardDescription>
+                Mettez à jour les informations de cette journée de découpe.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Date:</span>
-                  <span className="font-medium">{formatDate(cuttingDay.date)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Description:</span>
-                  <span className="font-medium">{cuttingDay.description}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Statut:</span>
-                  <span className="font-medium">{cuttingDay.status === 'en-cours' ? 'En cours' : 'Terminé'}</span>
-                </div>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  placeholder="Description de la journée de découpe..."
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[280px] justify-start text-left font-normal",
+                        !editedDate && "text-muted-foreground"
+                      )}
+                    >
+                      {editedDate ? (
+                        format(editedDate, "PPP", { locale: fr })
+                      ) : (
+                        <span>Choisir une date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={editedDate}
+                      onSelect={setEditedDate}
+                      disabled={(date) =>
+                        date > new Date()
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </CardContent>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Date</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatDate(new Date(cuttingDay.date))}</div>
+                <p className="text-sm text-muted-foreground">
+                  Date de la journée de découpe
+                </p>
+              </CardContent>
+            </Card>
 
-          {/* Orders Count */}
-          <Card>
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <div className="flex items-center">
-                <Package className="mr-2 h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Commandes</CardTitle>
-              </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Commandes</CardTitle>
+                <List className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{cuttingDayOrders.length}</div>
+                <p className="text-sm text-muted-foreground">
+                  Nombre de commandes pour cette journée
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Poids total</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatWeight(cuttingDay.totalWeight)}</div>
+                <p className="text-sm text-muted-foreground">
+                  Poids total des commandes de cette journée
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {cuttingDay.description && !isEditing && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{cuttingDay.orderCount}</div>
-              <p className="text-sm text-muted-foreground">
-                commande{cuttingDay.orderCount !== 1 ? 's' : ''} pour cette journée
-              </p>
+              <p>{cuttingDay.description}</p>
             </CardContent>
           </Card>
+        )}
 
-          {/* Total Weight */}
-          <Card>
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <div className="flex items-center">
-                <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Poids total</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatWeight(cuttingDay.totalWeight)}</div>
-              <p className="text-sm text-muted-foreground">à découper pour cette journée</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Print & Export Actions */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> Imprimer
-          </Button>
-          <Button variant="outline" onClick={exportAllOrdersToPDF}>
-            <Download className="mr-2 h-4 w-4" /> Exporter détails commandes
-          </Button>
-          <Button variant="outline" onClick={exportSummaryToPDF}>
-            <Download className="mr-2 h-4 w-4" /> Exporter récapitulatif compact
-          </Button>
-        </div>
-
-        {/* Related Orders */}
         <Card>
           <CardHeader>
-            <CardTitle>Commandes associées</CardTitle>
+            <div className="flex justify-between">
+              <CardTitle>Commandes de cette journée</CardTitle>
+              <div>
+                <Button 
+                  variant="outline"
+                  onClick={handleGenerateSummary}
+                  disabled={isGeneratingSummary}
+                >
+                  {isGeneratingSummary ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Générer la synthèse
+                    </>
+                  )}
+                </Button>
+                {summary && (
+                  <Button 
+                    variant="default"
+                    onClick={handleDownloadSummary}
+                    className="ml-2"
+                  >
+                    Télécharger la synthèse
+                  </Button>
+                )}
+              </div>
+            </div>
             <CardDescription>
-              Liste des commandes prévues pour cette journée de découpe
+              Liste des commandes associées à cette journée de découpe
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {relatedOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-medium">Aucune commande</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Aucune commande n'est associée à cette journée de découpe.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {relatedOrders.map((order) => (
-                  <Card key={order.id} className="border border-muted">
-                    <CardHeader className="px-4 py-3 bg-muted/20">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base font-medium">{order.client.name}</h3>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Commande #{order.id.slice(0, 8)} • {formatDate(order.orderDate)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{formatWeight(order.totalWeight)}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => toggleOrderDetails(order.id)}
-                            className="p-1 h-8 w-8"
-                          >
-                            {expandedOrders[order.id] ? 
-                              <ChevronUp className="h-4 w-4" /> : 
-                              <ChevronDown className="h-4 w-4" />
-                            }
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    {expandedOrders[order.id] && (
-                      <CardContent className="px-4 py-3">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Produit</TableHead>
-                              <TableHead>Conditionnement</TableHead>
-                              <TableHead className="text-right">Quantité</TableHead>
-                              <TableHead className="text-right">Poids unitaire</TableHead>
-                              <TableHead className="text-right">Poids total</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.items.map((item: any) => (
-                              <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.product.name}</TableCell>
-                                <TableCell>{item.product.packageType}</TableCell>
-                                <TableCell className="text-right">{item.quantity}</TableCell>
-                                <TableCell className="text-right">
-                                  {formatWeight(item.product.weightPerUnit * item.product.unitQuantity)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {formatWeight(item.totalWeight)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow>
-                              <TableCell colSpan={4} className="text-right font-bold">
-                                Total
-                              </TableCell>
-                              <TableCell className="text-right font-bold">
-                                {formatWeight(order.totalWeight)}
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                        
-                        {order.notes && (
-                          <div className="mt-4 p-3 bg-muted/20 rounded-md">
-                            <h4 className="font-medium mb-1">Notes:</h4>
-                            <p className="text-sm">{order.notes}</p>
-                          </div>
-                        )}
-                        
-                        <div className="mt-4 flex justify-end">
-                          <Button
-                            size="sm"
-                            onClick={() => navigate(`/orders/${order.id}`)}
-                          >
-                            Voir détails complets
-                          </Button>
-                        </div>
-                      </CardContent>
-                    )}
-                    
-                    <CardFooter className="px-4 py-2 bg-muted/10 flex justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        {order.items.length} produit(s)
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                      >
-                        Voir
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            )}
+          <CardContent className="p-0">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Produits</TableHead>
+                    <TableHead className="text-right">Poids</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cuttingDayOrders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24">
+                        Aucune commande pour cette journée.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    cuttingDayOrders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
+                        <TableCell>{order.client.name}</TableCell>
+                        <TableCell>{order.items.length}</TableCell>
+                        <TableCell className="text-right">{formatWeight(order.totalWeight)}</TableCell>
+                        <TableCell className="text-right">{formatDate(order.orderDate)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Delete Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette journée de découpe ? Les commandes associées ne seront pas supprimées.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Annuler</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleDeleteCuttingDay}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirmer la suppression</DialogTitle>
+              <DialogDescription>
+                Êtes-vous sûr de vouloir supprimer cette journée de découpe ? Cette action est irréversible.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <DialogClose asChild>
+                <Button variant="outline">Annuler</Button>
+              </DialogClose>
+              <Button variant="destructive" onClick={handleDeleteCuttingDay}>
+                Supprimer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 };
