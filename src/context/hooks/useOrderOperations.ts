@@ -52,13 +52,6 @@ export const useOrderOperations = (
       );
     }
 
-    // Apply status filter
-    if (options.status && options.status.length > 0) {
-      filteredOrders = filteredOrders.filter((order) =>
-        options.status?.includes(order.status)
-      );
-    }
-
     // Apply date range filter
     if (options.dateFrom) {
       filteredOrders = filteredOrders.filter(
@@ -90,8 +83,6 @@ export const useOrderOperations = (
             return direction * (new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());
           case 'weight':
             return direction * (a.totalWeight - b.totalWeight);
-          case 'status':
-            return direction * a.status.localeCompare(b.status);
           default:
             return 0;
         }

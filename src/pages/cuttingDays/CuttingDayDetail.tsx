@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -84,13 +83,13 @@ const CuttingDayDetail = () => {
       });
       
       // Définir les couleurs et styles
-      const headerBgColor = [74, 144, 206, 255]; // RGBA blue
-      const headerTextColor = [255, 255, 255, 255]; // RGBA white
-      const altRowColor = [240, 245, 250, 255]; // RGBA light blue
+      const headerBgColor = [74, 144, 206, 255] as [number, number, number]; // RGBA blue
+      const headerTextColor = [255, 255, 255, 255] as [number, number, number]; // RGBA white
+      const altRowColor = [240, 245, 250, 255] as [number, number, number]; // RGBA light blue
       
       // Ajouter un titre
       doc.setFontSize(18);
-      doc.setTextColor(40, 40, 40);
+      doc.setTextColor(headerTextColor[0], headerTextColor[1], headerTextColor[2]);
       doc.text(`RÉCAPITULATIF DE DÉCOUPE - ${formatDate(cuttingDay?.date || new Date())}`, doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
       
       // Sous-titre avec informations générales
@@ -183,7 +182,7 @@ const CuttingDayDetail = () => {
         startY: 40,
         theme: 'grid',
         headStyles: { 
-          fillColor: headerBgColor, 
+          fillColor: headerBgColor,
           textColor: headerTextColor,
           fontStyle: 'bold',
           halign: 'center'

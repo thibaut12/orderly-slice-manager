@@ -9,12 +9,13 @@ export const useCuttingDayOperations = (
   setCuttingDays: React.Dispatch<React.SetStateAction<CuttingDay[]>>,
   orders: Order[]
 ) => {
-  const addCuttingDay = (cuttingDay: Omit<CuttingDay, 'id' | 'createdAt' | 'updatedAt' | 'totalWeight' | 'orderCount'>) => {
+  const addCuttingDay = (cuttingDay: Omit<CuttingDay, 'id' | 'createdAt' | 'updatedAt' | 'totalWeight' | 'orderCount' | 'status'>) => {
     const newCuttingDay: CuttingDay = {
       ...cuttingDay,
       id: uuidv4(),
       totalWeight: 0,
       orderCount: 0,
+      status: 'en-cours',
       createdAt: new Date(),
       updatedAt: new Date(),
     };

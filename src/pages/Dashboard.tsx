@@ -14,34 +14,37 @@ import { useClients } from '@/hooks/useClients';
 import { useProducts } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { useCuttingDays } from '@/hooks/useCuttingDays';
-import { formatWeight, formatDate, translateStatus } from '@/utils/formatters';
+import { formatWeight, formatDate } from '@/utils/formatters';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { clients } = useClients();
   const { products } = useProducts();
-  const { orders } = useOrders();
+  const { orders, getActiveOrders } = useOrders();
   const { cuttingDays } = useCuttingDays();
   const [animate, setAnimate] = useState(false);
+
+  // Récupérer uniquement les commandes des journées de découpe en cours
+  const activeOrders = getActiveOrders();
 
   // Trigger animation on mount
   useEffect(() => {
     setAnimate(true);
   }, []);
 
+  // Obtenir les journées de découpe en cours
+  const activeCuttingDays = cuttingDays.filter(day => day.status === 'en-cours');
+  
   // Calculate dashboard stats
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const confirmOrder = orders.filter(o => o.status === 'confirmed').length;
-  const completedOrders = orders.filter(o => o.status === 'completed').length;
-  const totalOrderWeight = orders.reduce((sum, order) => sum + order.totalWeight, 0);
+  const totalOrderWeight = activeOrders.reduce((sum, order) => sum + order.totalWeight, 0);
   
   // Get recent orders
-  const recentOrders = [...orders]
+  const recentOrders = [...activeOrders]
     .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
     .slice(0, 3);
   
   // Get upcoming cutting days
-  const upcomingCuttingDays = [...cuttingDays]
+  const upcomingCuttingDays = [...activeCuttingDays]
     .filter(day => new Date(day.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 2);
@@ -99,12 +102,12 @@ const Dashboard = () => {
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Commandes
+                  Commandes actives
                 </CardTitle>
                 <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{orders.length}</div>
+                <div className="text-2xl font-bold">{activeOrders.length}</div>
               </CardContent>
               <CardFooter>
                 <Button variant="ghost" className="w-full" onClick={() => navigate('/orders')}>
@@ -116,7 +119,7 @@ const Dashboard = () => {
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Poids total
+                  Poids en cours
                 </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -132,43 +135,30 @@ const Dashboard = () => {
           </div>
           
           {/* Status Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-l-4 border-l-yellow-500">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-yellow-500" />
-                  En attente
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{pendingOrders}</div>
-                <p className="text-xs text-muted-foreground">commandes à traiter</p>
-              </CardContent>
-            </Card>
-            
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
-                  <CheckCircle className="h-4 w-4 mr-2 text-blue-500" />
-                  Confirmées
+                  <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+                  Journées de découpe en cours
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{confirmOrder}</div>
-                <p className="text-xs text-muted-foreground">commandes confirmées</p>
+                <div className="text-2xl font-bold">{activeCuttingDays.length}</div>
+                <p className="text-xs text-muted-foreground">journée(s) active(s)</p>
               </CardContent>
             </Card>
             
             <Card className="border-l-4 border-l-green-500">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
-                  <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                  Terminées
+                  <Scissors className="h-4 w-4 mr-2 text-green-500" />
+                  Commandées aux journées actives
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{completedOrders}</div>
-                <p className="text-xs text-muted-foreground">commandes terminées</p>
+                <div className="text-2xl font-bold">{activeOrders.length}</div>
+                <p className="text-xs text-muted-foreground">commandes en cours</p>
               </CardContent>
             </Card>
           </div>
@@ -214,7 +204,7 @@ const Dashboard = () => {
               {/* Upcoming Cutting Days */}
               {upcomingCuttingDays.length > 0 && (
                 <>
-                  <h2 className="text-xl font-semibold pt-2">Prochaines journées de découpe</h2>
+                  <h2 className="text-xl font-semibold pt-2">Journées de découpe en cours</h2>
                   <div className="space-y-3">
                     {upcomingCuttingDays.map((day) => (
                       <Card key={day.id} className="hover:shadow-md transition-shadow">
@@ -240,7 +230,7 @@ const Dashboard = () => {
                     {upcomingCuttingDays.length === 0 && (
                       <Card className="bg-muted/40">
                         <CardContent className="pt-6 text-center">
-                          <p className="text-muted-foreground">Aucune journée de découpe à venir</p>
+                          <p className="text-muted-foreground">Aucune journée de découpe en cours</p>
                           <Button 
                             variant="link" 
                             className="mt-2"
@@ -259,7 +249,7 @@ const Dashboard = () => {
             {/* Recent Orders */}
             <div className="flex flex-col space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Commandes récentes</h2>
+                <h2 className="text-xl font-semibold">Commandes actives récentes</h2>
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -278,15 +268,6 @@ const Dashboard = () => {
                       <CardHeader className="pb-2">
                         <div className="flex justify-between">
                           <CardTitle className="text-base">{order.client.name}</CardTitle>
-                          <div className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                            order.status === 'processing' ? 'bg-purple-100 text-purple-800' :
-                            order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {translateStatus(order.status)}
-                          </div>
                         </div>
                         <CardDescription>{formatDate(order.orderDate)}</CardDescription>
                       </CardHeader>
@@ -311,7 +292,7 @@ const Dashboard = () => {
               ) : (
                 <Card className="bg-muted/40">
                   <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground">Aucune commande récente</p>
+                    <p className="text-muted-foreground">Aucune commande active récente</p>
                     <Button 
                       variant="link" 
                       className="mt-2"

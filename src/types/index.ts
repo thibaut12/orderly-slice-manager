@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -38,7 +39,6 @@ export interface Order {
   client: Client;
   items: OrderItem[];
   totalWeight: number; // Calculé automatiquement: somme des poids des éléments
-  status: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled';
   orderDate: Date;
   deliveryDate?: Date;
   notes?: string;
@@ -53,6 +53,7 @@ export interface CuttingDay {
   description?: string;
   totalWeight: number; // Calculé: somme des poids des commandes associées
   orderCount: number; // Calculé: nombre de commandes associées
+  status: 'en-cours' | 'termine';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,7 +79,6 @@ export interface FilterOptions {
   searchTerm?: string;
   sortField?: SortField;
   sortDirection?: SortDirection;
-  status?: string[];
   dateFrom?: Date;
   dateTo?: Date;
   cuttingDayId?: string;

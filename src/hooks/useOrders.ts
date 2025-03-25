@@ -11,7 +11,7 @@ export const useOrders = () => {
     throw new Error('useOrders must be used within an AppProvider');
   }
   
-  const { orders, addOrder, updateOrder, deleteOrder } = context;
+  const { orders, addOrder, updateOrder, deleteOrder, cuttingDays } = context;
   
   // Fonction utilitaire pour créer un nouvel élément de commande
   const createOrderItem = (product: Product, quantity: number = 1): OrderItem => {
@@ -31,12 +31,26 @@ export const useOrders = () => {
     return items.reduce((sum, item) => sum + item.totalWeight, 0);
   };
   
+  // Fonction pour récupérer les commandes liées aux journées de découpe en cours
+  const getActiveOrders = (): Order[] => {
+    // Récupérer les IDs des journées en cours
+    const activeCuttingDayIds = cuttingDays
+      .filter(day => day.status === 'en-cours')
+      .map(day => day.id);
+      
+    // Filtrer les commandes associées à ces journées
+    return orders.filter(order => 
+      order.cuttingDayId && activeCuttingDayIds.includes(order.cuttingDayId)
+    );
+  };
+  
   return {
     orders,
     addOrder,
     updateOrder,
     deleteOrder,
     createOrderItem,
-    calculateOrderTotalWeight
+    calculateOrderTotalWeight,
+    getActiveOrders
   };
 };
