@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Home, Users, Package, ShoppingCart, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, Home, Users, Package, ShoppingCart, FileText, ChevronLeft, ChevronRight, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -22,7 +22,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Produits', path: '/products', icon: Package },
     { name: 'Commandes', path: '/orders', icon: ShoppingCart },
-    { name: 'Synthèse', path: '/summary', icon: FileText },
+    { name: 'Journées de découpe', path: '/cutting-days', icon: FileText },
+    { name: 'Traçabilité', path: '/productions', icon: FlaskConical },
   ];
 
   // Automatically close sidebar on mobile

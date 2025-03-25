@@ -72,6 +72,33 @@ export interface CuttingSummary {
   generatedAt: Date;
 }
 
+// Interfaces pour le module de traçabilité
+
+export interface Ingredient {
+  id: string;
+  name: string;
+  lotNumber: string;
+  quantity: number;
+  unit: 'g' | 'kg' | 'l' | 'ml' | 'unité';
+}
+
+export interface Production {
+  id: string;
+  productId: string;
+  product: Product;
+  batchNumber: string;
+  productionDate: Date;
+  ingredients: Ingredient[];
+  autoclaveNumber?: string;
+  temperature?: number;
+  duration?: number; // en minutes
+  quantityProduced: number;
+  stoveTest?: 'validé' | 'non-validé' | 'en-attente';
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export type SortDirection = 'asc' | 'desc';
 export type SortField = 'name' | 'date' | 'weight' | 'status';
 

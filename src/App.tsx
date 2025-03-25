@@ -17,6 +17,8 @@ import OrderCreate from "./pages/orders/OrderCreate";
 import OrderDetail from "./pages/orders/OrderDetail";
 import CuttingDaysList from "./pages/cuttingDays/CuttingDaysList";
 import CuttingDayDetail from "./pages/cuttingDays/CuttingDayDetail";
+import ProductionsList from "./pages/productions/ProductionsList";
+import ProductionDetail from "./pages/productions/ProductionDetail";
 import Summary from "./pages/summary/Summary";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +50,10 @@ const App = () => (
             {/* Routes Journées de découpe */}
             <Route path="/cutting-days" element={<CuttingDaysList />} />
             <Route path="/cutting-days/:id" element={<CuttingDayDetail />} />
+            
+            {/* Routes Productions (traçabilité) */}
+            <Route path="/productions" element={<ProductionsList />} />
+            <Route path="/productions/:id" element={<ProductionDetail />} />
             
             {/* Synthèse */}
             <Route path="/summary" element={<Summary />} />

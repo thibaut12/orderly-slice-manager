@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, Product, Order, FilterOptions, CuttingSummary, CuttingDay } from '../types';
+import { Client, Product, Order, FilterOptions, CuttingSummary, CuttingDay, Production } from '../types';
 import { useClientOperations } from './hooks/useClientOperations';
 import { useProductOperations } from './hooks/useProductOperations';
 import { useOrderOperations } from './hooks/useOrderOperations';
 import { useCuttingDayOperations } from './hooks/useCuttingDayOperations';
 import { useSummaryOperations } from './hooks/useSummaryOperations';
+import { useProductionOperations } from './hooks/useProductionOperations';
 import { sampleClients, sampleProducts } from './sampleData';
 
 // Define the context type
@@ -14,6 +15,7 @@ interface AppContextType {
   products: Product[];
   orders: Order[];
   cuttingDays: CuttingDay[];
+  productions: Production[];
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateClient: (clientId: string, clientData: Partial<Client>) => void;
   deleteClient: (clientId: string) => void;
@@ -26,6 +28,9 @@ interface AppContextType {
   addCuttingDay: (cuttingDay: Omit<CuttingDay, 'id' | 'createdAt' | 'updatedAt' | 'totalWeight' | 'orderCount'>) => void;
   updateCuttingDay: (cuttingDayId: string, cuttingDayData: Partial<CuttingDay>) => void;
   deleteCuttingDay: (cuttingDayId: string) => void;
+  addProduction: (production: Omit<Production, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateProduction: (productionId: string, productionData: Partial<Production>) => void;
+  deleteProduction: (productionId: string) => void;
   filterOrders: (options: FilterOptions) => Order[];
   generateCuttingSummary: (cuttingDayId?: string) => CuttingSummary;
   getCuttingDaySummary: (cuttingDayId: string) => CuttingSummary;
@@ -56,13 +61,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return savedCuttingDays ? JSON.parse(savedCuttingDays) : [];
   });
 
+  const [productions, setProductions] = useState<Production[]>(() => {
+    const savedProductions = localStorage.getItem('productions');
+    return savedProductions ? JSON.parse(savedProductions) : [];
+  });
+
   // Persist data to localStorage
   useEffect(() => {
     localStorage.setItem('clients', JSON.stringify(clients));
     localStorage.setItem('products', JSON.stringify(products));
     localStorage.setItem('orders', JSON.stringify(orders));
     localStorage.setItem('cuttingDays', JSON.stringify(cuttingDays));
-  }, [clients, products, orders, cuttingDays]);
+    localStorage.setItem('productions', JSON.stringify(productions));
+  }, [clients, products, orders, cuttingDays, productions]);
 
   // Update cutting days metrics when orders change
   useEffect(() => {
@@ -90,12 +101,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { addOrder, updateOrder, deleteOrder, filterOrders } = useOrderOperations(orders, setOrders);
   const { addCuttingDay, updateCuttingDay, deleteCuttingDay } = useCuttingDayOperations(cuttingDays, setCuttingDays, orders);
   const { generateCuttingSummary, getCuttingDaySummary } = useSummaryOperations(orders);
+  const { addProduction, updateProduction, deleteProduction } = useProductionOperations(productions, setProductions);
 
   const value = {
     clients,
     products,
     orders,
     cuttingDays,
+    productions,
     addClient,
     updateClient,
     deleteClient,
@@ -108,6 +121,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addCuttingDay,
     updateCuttingDay,
     deleteCuttingDay,
+    addProduction,
+    updateProduction,
+    deleteProduction,
     filterOrders,
     generateCuttingSummary,
     getCuttingDaySummary,
