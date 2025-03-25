@@ -2,16 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { ArrowLeft, FileText, Package, Calendar, User, Edit, Trash2, Save, X } from "lucide-react";
+import { ArrowLeft, FileText, Package, Calendar, User, Edit, Trash2, Save, X, Plus, Search } from "lucide-react";
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
+import { useOrders } from '@/hooks/useOrders';
+import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
-  DialogHeader, DialogTitle, DialogClose 
+  DialogHeader, DialogTitle, DialogClose, DialogTrigger
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,17 +20,23 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDate, formatWeight, getStatusColor, translateStatus } from '@/utils/calculations';
-import { Order, OrderItem } from '@/types';
+import { Order, OrderItem, Product } from '@/types';
 import { toast } from "sonner";
 
 const OrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { orders, clients, products, updateOrder, deleteOrder } = useApp();
+  const { createOrderItem, calculateOrderTotalWeight } = useOrders();
+  const { filterProducts } = useProducts();
   const [order, setOrder] = useState<Order | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
   // Edit form state
   const [editedStatus, setEditedStatus] = useState<"pending" | "confirmed" | "processing" | "completed" | "cancelled">('pending');
@@ -51,6 +58,11 @@ const OrderDetail = () => {
     }
   }, [id, orders]);
 
+  // Filtrer les produits lorsque le terme de recherche change
+  useEffect(() => {
+    setFilteredProducts(filterProducts(productSearchTerm));
+  }, [productSearchTerm, filterProducts]);
+
   const handleDeleteOrder = () => {
     if (order) {
       deleteOrder(order.id);
@@ -62,10 +74,14 @@ const OrderDetail = () => {
   const handleSaveChanges = () => {
     if (!order) return;
 
+    // Calculer le nouveau poids total
+    const totalWeight = calculateOrderTotalWeight(editedItems);
+
     const updatedOrder: Partial<Order> = {
       status: editedStatus,
       notes: editedNotes,
       items: editedItems,
+      totalWeight, // Ajouter le poids total mis à jour
     };
 
     if (editedDeliveryDate) {
@@ -89,6 +105,8 @@ const OrderDetail = () => {
   };
 
   const updateItemQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) return; // Empêcher les quantités négatives ou nulles
+    
     const updatedItems = editedItems.map(item => {
       if (item.id === itemId) {
         const product = products.find(p => p.id === item.productId);
@@ -110,6 +128,30 @@ const OrderDetail = () => {
     setEditedItems(editedItems.map(item => 
       item.id === itemId ? { ...item, notes } : item
     ));
+  };
+
+  const removeItem = (itemId: string) => {
+    setEditedItems(editedItems.filter(item => item.id !== itemId));
+    toast.success("Produit retiré de la commande");
+  };
+
+  const addProductToOrder = (product: Product) => {
+    // Vérifier si le produit est déjà dans la commande
+    const existingItem = editedItems.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      // Si le produit existe déjà, augmenter la quantité
+      updateItemQuantity(existingItem.id, existingItem.quantity + 1);
+      toast.success(`Quantité de ${product.name} augmentée`);
+    } else {
+      // Sinon, ajouter un nouvel élément
+      const newItem = createOrderItem(product, 1);
+      setEditedItems([...editedItems, newItem]);
+      toast.success(`${product.name} ajouté à la commande`);
+    }
+    
+    setShowAddProductDialog(false);
+    setProductSearchTerm('');
   };
 
   if (!order) {
@@ -186,7 +228,10 @@ const OrderDetail = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="status">Statut</Label>
-                    <Select value={editedStatus} onValueChange={setEditedStatus}>
+                    <Select 
+                      value={editedStatus} 
+                      onValueChange={(value: "pending" | "confirmed" | "processing" | "completed" | "cancelled") => setEditedStatus(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner un statut" />
                       </SelectTrigger>
@@ -224,9 +269,72 @@ const OrderDetail = () => {
 
             {/* Edit Items */}
             <Card>
-              <CardHeader>
-                <CardTitle>Produits commandés</CardTitle>
-                <CardDescription>Modifier les quantités et notes des produits</CardDescription>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Produits commandés</CardTitle>
+                    <CardDescription>Modifier les produits, quantités et notes</CardDescription>
+                  </div>
+                  <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[525px]">
+                      <DialogHeader>
+                        <DialogTitle>Ajouter un produit</DialogTitle>
+                        <DialogDescription>
+                          Recherchez et sélectionnez un produit à ajouter à la commande.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="relative my-2">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Rechercher un produit..."
+                          className="pl-8"
+                          value={productSearchTerm}
+                          onChange={(e) => setProductSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      
+                      <ScrollArea className="mt-2 h-[350px] rounded border p-2">
+                        {filteredProducts.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4">
+                            Aucun produit trouvé.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {filteredProducts.map((product) => (
+                              <div
+                                key={product.id}
+                                className="flex items-center justify-between p-2 rounded hover:bg-secondary cursor-pointer"
+                                onClick={() => addProductToOrder(product)}
+                              >
+                                <div>
+                                  <h4 className="font-medium">{product.name}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {product.packageType} - {formatWeight(product.weightPerUnit * product.unitQuantity)}
+                                  </p>
+                                </div>
+                                <Button variant="ghost" size="sm">
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                      
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddProductDialog(false)}>
+                          Annuler
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -236,31 +344,65 @@ const OrderDetail = () => {
                       <TableHead>Conditionnement</TableHead>
                       <TableHead className="text-right">Quantité</TableHead>
                       <TableHead>Notes</TableHead>
+                      <TableHead className="text-right">Poids total</TableHead>
+                      <TableHead className="w-[70px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {editedItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.product.name}</TableCell>
-                        <TableCell>{item.product.packageType}</TableCell>
-                        <TableCell className="text-right">
-                          <Input 
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 0)}
-                            min="1"
-                            className="w-20 ml-auto"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input 
-                            value={item.notes || ''}
-                            onChange={(e) => updateItemNotes(item.id, e.target.value)}
-                            placeholder="Notes sur ce produit..."
-                          />
+                    {editedItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                          Aucun produit dans cette commande. Cliquez sur "Ajouter un produit" pour commencer.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      editedItems.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.product.name}</TableCell>
+                          <TableCell>{item.product.packageType}</TableCell>
+                          <TableCell className="text-right">
+                            <Input 
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 0)}
+                              min="1"
+                              className="w-20 ml-auto"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input 
+                              value={item.notes || ''}
+                              onChange={(e) => updateItemNotes(item.id, e.target.value)}
+                              placeholder="Notes sur ce produit..."
+                            />
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatWeight(item.totalWeight)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => removeItem(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                    {editedItems.length > 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-right font-bold">
+                          Total
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {formatWeight(calculateOrderTotalWeight(editedItems))}
+                        </TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
