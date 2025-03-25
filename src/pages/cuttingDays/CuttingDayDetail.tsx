@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Calendar, Info, Package, 
-  FileText, Printer, Download, Edit, Trash2, ChevronDown, ChevronUp 
+  FileText, Printer, Download, Edit, Trash2, ChevronDown, ChevronUp,
+  CheckSquare, Square
 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { useCuttingDays } from '@/hooks/useCuttingDays';
@@ -19,7 +21,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, 
   DialogHeader, DialogTitle, DialogClose 
 } from '@/components/ui/dialog';
-import { formatDate, formatWeight, translateStatus } from '@/utils/formatters';
+import { formatDate, formatWeight } from '@/utils/formatters';
 import { useSummaryOperations } from '@/context/hooks/useSummaryOperations';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -28,7 +30,7 @@ import autoTable from 'jspdf-autotable';
 const CuttingDayDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { cuttingDays, deleteCuttingDay } = useCuttingDays();
+  const { cuttingDays, deleteCuttingDay, updateCuttingDay } = useCuttingDays();
   const { orders } = useOrders();
   const { getCuttingDaySummary } = useSummaryOperations(orders);
   const [cuttingDay, setCuttingDay] = useState<any | null>(null);
@@ -53,6 +55,14 @@ const CuttingDayDetail = () => {
     if (id) {
       deleteCuttingDay(id);
       navigate('/cutting-days');
+    }
+  };
+
+  const handleToggleStatus = () => {
+    if (id && cuttingDay) {
+      const newStatus = cuttingDay.status === 'en-cours' ? 'termine' : 'en-cours';
+      updateCuttingDay(id, { status: newStatus });
+      setCuttingDay({ ...cuttingDay, status: newStatus });
     }
   };
 
@@ -82,10 +92,10 @@ const CuttingDayDetail = () => {
         format: 'a4'
       });
       
-      // Définir les couleurs et styles
-      const headerBgColor = [74, 144, 206, 255] as [number, number, number]; // RGBA blue
-      const headerTextColor = [255, 255, 255, 255] as [number, number, number]; // RGBA white
-      const altRowColor = [240, 245, 250, 255] as [number, number, number]; // RGBA light blue
+      // Définir les couleurs et styles (corriger le typage)
+      const headerBgColor = [74, 144, 206] as [number, number, number];
+      const headerTextColor = [255, 255, 255] as [number, number, number];
+      const altRowColor = [240, 245, 250] as [number, number, number];
       
       // Ajouter un titre
       doc.setFontSize(18);
@@ -175,7 +185,7 @@ const CuttingDayDetail = () => {
       totalsRow.push(formatWeight(cuttingDay?.totalWeight || 0));
       body.push(totalsRow);
       
-      // Ajouter le tableau au PDF
+      // Ajouter le tableau au PDF avec options corrigées pour le typage
       autoTable(doc, {
         head: headers,
         body: body,
@@ -188,12 +198,10 @@ const CuttingDayDetail = () => {
           halign: 'center'
         },
         alternateRowStyles: { fillColor: altRowColor },
-        // Style spécial pour la dernière ligne (totaux)
-        willDrawRow: (data) => {
+        didDrawRow: (data) => {
           if (data.row.index === body.length - 1) {
             doc.setFillColor(220, 230, 240);
             doc.setTextColor(0, 0, 0);
-            // Use 'bold' directly for font style
             doc.setFont(undefined, 'bold');
           }
         }
@@ -252,8 +260,6 @@ const CuttingDayDetail = () => {
         doc.setFontSize(10);
         doc.text(`Date: ${formatDate(order.orderDate)}`, 14, yPos);
         yPos += 5;
-        doc.text(`Statut: ${translateStatus(order.status)}`, 14, yPos);
-        yPos += 5;
         doc.text(`Poids total: ${formatWeight(order.totalWeight)}`, 14, yPos);
         yPos += 10;
         
@@ -271,8 +277,8 @@ const CuttingDayDetail = () => {
           body: orderItems,
           startY: yPos,
           theme: 'grid',
-          headStyles: { fillColor: [41, 128, 185, 255], textColor: 255 },
-          alternateRowStyles: { fillColor: [245, 245, 245, 255] }
+          headStyles: { fillColor: [41, 128, 185] as [number, number, number], textColor: [255, 255, 255] as [number, number, number] },
+          alternateRowStyles: { fillColor: [245, 245, 245] as [number, number, number] }
         });
         
         // Update position for next order
@@ -294,6 +300,13 @@ const CuttingDayDetail = () => {
       console.error("Erreur lors de l'export PDF:", error);
       toast.error("Erreur lors de l'export PDF");
     }
+  };
+
+  // Function to get status badge
+  const getStatusBadge = (status: 'en-cours' | 'termine') => {
+    return status === 'en-cours' 
+      ? <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">En cours</Badge>
+      : <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Terminé</Badge>;
   };
 
   if (!cuttingDay) {
@@ -318,13 +331,24 @@ const CuttingDayDetail = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Journée de découpe</h1>
-            <p className="text-muted-foreground flex items-center">
-              <Calendar className="mr-2 h-4 w-4" /> {formatDate(cuttingDay.date)}
-            </p>
+            <div className="text-muted-foreground flex items-center space-x-2">
+              <Calendar className="mr-2 h-4 w-4" /> 
+              <span>{formatDate(cuttingDay.date)}</span>
+              {getStatusBadge(cuttingDay.status)}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/cutting-days')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Retour
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleToggleStatus}
+            >
+              {cuttingDay.status === 'en-cours' 
+                ? <><CheckSquare className="mr-2 h-4 w-4" />Marquer comme terminé</>
+                : <><Square className="mr-2 h-4 w-4" />Reprendre</>
+              }
             </Button>
             <Button 
               variant="outline" 
@@ -359,6 +383,10 @@ const CuttingDayDetail = () => {
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Description:</span>
                   <span className="font-medium">{cuttingDay.description}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Statut:</span>
+                  <span className="font-medium">{cuttingDay.status === 'en-cours' ? 'En cours' : 'Terminé'}</span>
                 </div>
               </div>
             </CardContent>
@@ -434,7 +462,6 @@ const CuttingDayDetail = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="text-base font-medium">{order.client.name}</h3>
-                            <Badge variant="outline">{translateStatus(order.status)}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
                             Commande #{order.id.slice(0, 8)} • {formatDate(order.orderDate)}

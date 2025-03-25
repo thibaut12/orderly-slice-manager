@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Calendar, Search, Package, 
-  ArrowUpDown, Eye, Trash2, Scissors 
+  ArrowUpDown, Eye, Trash2, Scissors,
+  CheckSquare, Square
 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { useCuttingDays } from '@/hooks/useCuttingDays';
@@ -28,6 +29,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 // Schéma de validation pour le formulaire de journée de découpe
 const cuttingDayFormSchema = z.object({
@@ -35,13 +37,14 @@ const cuttingDayFormSchema = z.object({
     required_error: "Veuillez sélectionner une date",
   }),
   description: z.string().optional(),
+  status: z.enum(['en-cours', 'termine']),
 });
 
 type CuttingDayFormValues = z.infer<typeof cuttingDayFormSchema>;
 
 const CuttingDaysList = () => {
   const navigate = useNavigate();
-  const { cuttingDays, addCuttingDay, deleteCuttingDay } = useCuttingDays();
+  const { cuttingDays, addCuttingDay, deleteCuttingDay, updateCuttingDay } = useCuttingDays();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -50,7 +53,7 @@ const CuttingDaysList = () => {
   // Filtered cutting days
   const filteredDays = cuttingDays.filter(day => {
     return formatDate(day.date).toLowerCase().includes(searchTerm.toLowerCase()) ||
-           day.description.toLowerCase().includes(searchTerm.toLowerCase());
+           (day.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
   });
 
   // Formulaire de création
@@ -59,6 +62,7 @@ const CuttingDaysList = () => {
     defaultValues: {
       date: new Date(),
       description: "",
+      status: 'en-cours',
     },
   });
 
@@ -79,6 +83,7 @@ const CuttingDaysList = () => {
     addCuttingDay({
       date: data.date,
       description: data.description,
+      status: data.status,
     });
     setCreateDialogOpen(false);
     form.reset();
@@ -88,8 +93,21 @@ const CuttingDaysList = () => {
     form.reset({
       date: new Date(),
       description: "",
+      status: 'en-cours',
     });
     setCreateDialogOpen(true);
+  };
+
+  const handleToggleStatus = (dayId: string, currentStatus: 'en-cours' | 'termine') => {
+    const newStatus = currentStatus === 'en-cours' ? 'termine' : 'en-cours';
+    updateCuttingDay(dayId, { status: newStatus });
+  };
+
+  // Function to get status badge
+  const getStatusBadge = (status: 'en-cours' | 'termine') => {
+    return status === 'en-cours' 
+      ? <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">En cours</Badge>
+      : <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Terminé</Badge>;
   };
 
   return (
@@ -161,6 +179,7 @@ const CuttingDaysList = () => {
                       </div>
                     </TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Statut</TableHead>
                     <TableHead>Commandes</TableHead>
                     <TableHead className="text-right">Poids total</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -176,12 +195,24 @@ const CuttingDaysList = () => {
                         </div>
                       </TableCell>
                       <TableCell>{day.description}</TableCell>
+                      <TableCell>{getStatusBadge(day.status)}</TableCell>
                       <TableCell>{day.orderCount} commande(s)</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatWeight(day.totalWeight)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleToggleStatus(day.id, day.status)}
+                            className="text-muted-foreground"
+                          >
+                            {day.status === 'en-cours' 
+                              ? <CheckSquare className="h-4 w-4" /> 
+                              : <Square className="h-4 w-4" />
+                            }
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -294,6 +325,42 @@ const CuttingDaysList = () => {
                     <FormDescription>
                       Ajoutez des informations supplémentaires si nécessaire
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Statut */}
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut</FormLabel>
+                    <div className="flex space-x-4">
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="radio"
+                            checked={field.value === 'en-cours'}
+                            onChange={() => field.onChange('en-cours')}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">En cours</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="radio"
+                            checked={field.value === 'termine'}
+                            onChange={() => field.onChange('termine')}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">Terminé</FormLabel>
+                      </FormItem>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

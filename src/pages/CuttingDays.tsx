@@ -18,7 +18,9 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  CalendarPlus
+  CalendarPlus,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
@@ -36,6 +38,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatWeight } from '@/utils/calculations';
 import { CuttingDay, Order } from '@/types';
+import { Badge } from '@/components/ui/badge';
 
 // Schéma de validation pour le formulaire de journée de découpe
 const cuttingDayFormSchema = z.object({
@@ -43,6 +46,7 @@ const cuttingDayFormSchema = z.object({
     required_error: "Veuillez sélectionner une date",
   }),
   description: z.string().optional(),
+  status: z.enum(['en-cours', 'termine']),
 });
 
 type CuttingDayFormValues = z.infer<typeof cuttingDayFormSchema>;
@@ -60,6 +64,7 @@ const CuttingDays = () => {
     defaultValues: {
       date: new Date(),
       description: "",
+      status: 'en-cours',
     },
   });
 
@@ -70,11 +75,13 @@ const CuttingDays = () => {
       form.reset({
         date: new Date(cuttingDay.date),
         description: cuttingDay.description || "",
+        status: cuttingDay.status,
       });
     } else {
       form.reset({
         date: new Date(),
         description: "",
+        status: 'en-cours',
       });
     }
     setIsDialogOpen(true);
@@ -86,11 +93,13 @@ const CuttingDays = () => {
       updateCuttingDay(selectedCuttingDay.id, {
         date: data.date,
         description: data.description,
+        status: data.status,
       });
     } else {
       addCuttingDay({
         date: data.date,
         description: data.description,
+        status: data.status,
       });
     }
     setIsDialogOpen(false);
@@ -109,6 +118,12 @@ const CuttingDays = () => {
     setSelectedCuttingDay(cuttingDay);
   };
 
+  // Toggle cutting day status
+  const handleToggleStatus = (cuttingDayId: string, currentStatus: 'en-cours' | 'termine') => {
+    const newStatus = currentStatus === 'en-cours' ? 'termine' : 'en-cours';
+    updateCuttingDay(cuttingDayId, { status: newStatus });
+  };
+
   // Get orders for the selected cutting day
   const getOrdersForCuttingDay = (cuttingDayId: string): Order[] => {
     return orders.filter(order => order.cuttingDayId === cuttingDayId);
@@ -123,6 +138,13 @@ const CuttingDays = () => {
   const handleExportSummary = (cuttingDayId: string) => {
     // This would be implemented with a PDF or Excel export library
     toast.success("Fonctionnalité d'export bientôt disponible");
+  };
+
+  // Function to get status badge
+  const getStatusBadge = (status: 'en-cours' | 'termine') => {
+    return status === 'en-cours' 
+      ? <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">En cours</Badge>
+      : <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Terminé</Badge>;
   };
 
   return (
@@ -176,9 +198,12 @@ const CuttingDays = () => {
                         onClick={() => handleSelectCuttingDay(day)}
                       >
                         <div className="flex flex-col">
-                          <span className="font-medium">
-                            {format(new Date(day.date), "EEEE d MMMM yyyy", { locale: fr })}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {format(new Date(day.date), "EEEE d MMMM yyyy", { locale: fr })}
+                            </span>
+                            {getStatusBadge(day.status)}
+                          </div>
                           <span className="text-muted-foreground text-sm">
                             {day.orderCount} commande{day.orderCount !== 1 ? 's' : ''} • {formatWeight(day.totalWeight)}
                           </span>
@@ -198,14 +223,26 @@ const CuttingDays = () => {
               <Card>
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
-                    <CardTitle>
-                      {format(new Date(selectedCuttingDay.date), "EEEE d MMMM yyyy", { locale: fr })}
-                    </CardTitle>
+                    <div className="flex items-center gap-2 mb-1">
+                      <CardTitle>
+                        {format(new Date(selectedCuttingDay.date), "EEEE d MMMM yyyy", { locale: fr })}
+                      </CardTitle>
+                      {getStatusBadge(selectedCuttingDay.status)}
+                    </div>
                     {selectedCuttingDay.description && (
                       <CardDescription>{selectedCuttingDay.description}</CardDescription>
                     )}
                   </div>
                   <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleToggleStatus(selectedCuttingDay.id, selectedCuttingDay.status)}
+                    >
+                      {selectedCuttingDay.status === 'en-cours' 
+                        ? <><CheckSquare className="mr-2 h-4 w-4" />Marquer comme terminé</>
+                        : <><Square className="mr-2 h-4 w-4" />Reprendre cette journée</>
+                      }
+                    </Button>
                     <Button
                       variant="outline"
                       size="icon"
@@ -450,6 +487,42 @@ const CuttingDays = () => {
                     <FormDescription>
                       Ajoutez des informations supplémentaires si nécessaire
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Statut */}
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut</FormLabel>
+                    <div className="flex space-x-4">
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="radio"
+                            checked={field.value === 'en-cours'}
+                            onChange={() => field.onChange('en-cours')}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">En cours</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="radio"
+                            checked={field.value === 'termine'}
+                            onChange={() => field.onChange('termine')}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">Terminé</FormLabel>
+                      </FormItem>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

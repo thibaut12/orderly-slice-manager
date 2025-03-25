@@ -22,12 +22,18 @@ export const useCuttingDays = () => {
     return cuttingDays.filter(day => day.status === 'termine');
   };
   
+  // Fonction pour changer le statut d'une journée de découpe
+  const changeCuttingDayStatus = (id: string, status: 'en-cours' | 'termine') => {
+    updateCuttingDay(id, { status });
+  };
+  
   return {
     cuttingDays,
     addCuttingDay,
     updateCuttingDay,
     deleteCuttingDay,
     getActiveCuttingDays,
-    getCompletedCuttingDays
+    getCompletedCuttingDays,
+    changeCuttingDayStatus
   };
 };
