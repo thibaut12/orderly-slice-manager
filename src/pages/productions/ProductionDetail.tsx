@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProductions } from '@/hooks/useProductions';
@@ -8,7 +7,10 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from "sonner";
-import { FlaskConical, Package, Calendar, Thermometer, Plus, X, Check, ArrowLeft } from 'lucide-react';
+import { 
+  FlaskConical, Package, Calendar, Thermometer, Plus, X, Check, ArrowLeft,
+  Download, FileText
+} from 'lucide-react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +21,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { exportProductionToPDF } from '@/utils/pdfExport';
 
 const ProductionDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -153,6 +157,24 @@ const ProductionDetail = () => {
     navigate('/productions');
   };
   
+  const handleExportPDF = () => {
+    if (isNew) {
+      toast.error("Vous devez d'abord enregistrer la production avant de pouvoir exporter une fiche");
+      return;
+    }
+    
+    if (formData.product) {
+      const productionData = {
+        ...(formData as Production)
+      };
+      
+      exportProductionToPDF(productionData);
+      toast.success("Fiche de production exportée en PDF");
+    } else {
+      toast.error("Impossible d'exporter la fiche: données incomplètes");
+    }
+  };
+  
   return (
     <Layout>
       <div className="space-y-6">
@@ -172,10 +194,18 @@ const ProductionDetail = () => {
               )}
             </div>
           </div>
-          <Button onClick={handleSubmit}>
-            <Check className="mr-2 h-4 w-4" />
-            {isNew ? "Créer la production" : "Enregistrer les modifications"}
-          </Button>
+          <div className="flex gap-2">
+            {!isNew && (
+              <Button variant="outline" onClick={handleExportPDF}>
+                <FileText className="mr-2 h-4 w-4" />
+                Exporter en PDF
+              </Button>
+            )}
+            <Button onClick={handleSubmit}>
+              <Check className="mr-2 h-4 w-4" />
+              {isNew ? "Créer la production" : "Enregistrer les modifications"}
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
