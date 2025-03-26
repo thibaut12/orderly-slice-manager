@@ -20,7 +20,12 @@ export const useProductions = () => {
     return productions.filter(production => 
       production.product.name.toLowerCase().includes(term) ||
       production.batchNumber.toLowerCase().includes(term) ||
-      production.autoclaveNumber?.toLowerCase().includes(term)
+      production.autoclaveNumber?.toLowerCase().includes(term) ||
+      // Recherche parmi les ingrédients
+      production.ingredients.some(ingredient => 
+        ingredient.name.toLowerCase().includes(term) ||
+        ingredient.lotNumber.toLowerCase().includes(term)
+      )
     );
   };
   

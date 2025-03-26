@@ -52,7 +52,10 @@ export const exportProductionToPDF = (production: Production) => {
   
   // Add ingredients section if there are any
   if (production.ingredients && production.ingredients.length > 0) {
-    const ingredientsY = doc.lastAutoTable?.finalY || 35;
+    // On utilise une variable pour stocker la position Y après la dernière table
+    const autoTableOutput = doc.autoTable.previous;
+    const ingredientsY = autoTableOutput ? autoTableOutput.finalY : 35;
+    
     doc.text('Ingrédients et traçabilité', 14, ingredientsY + 10);
     
     const ingredientsData = production.ingredients.map((ingredient: Ingredient) => [
@@ -71,7 +74,9 @@ export const exportProductionToPDF = (production: Production) => {
   
   // Add notes if any
   if (production.notes) {
-    const notesY = doc.lastAutoTable?.finalY || 35;
+    const autoTableOutput = doc.autoTable.previous;
+    const notesY = autoTableOutput ? autoTableOutput.finalY : 35;
+    
     doc.text('Notes', 14, notesY + 10);
     
     autoTable(doc, {

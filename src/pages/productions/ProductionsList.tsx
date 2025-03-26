@@ -21,15 +21,11 @@ import {
 
 const ProductionsList = () => {
   const navigate = useNavigate();
-  const { productions } = useProductions();
+  const { productions, searchProductions } = useProductions();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fonction de filtrage
-  const filteredProductions = productions.filter(production => 
-    production.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    production.batchNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (production.autoclaveNumber && production.autoclaveNumber.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Utiliser la fonction searchProductions du hook
+  const filteredProductions = searchProductions(searchTerm);
 
   return (
     <Layout>
@@ -52,7 +48,7 @@ const ProductionsList = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Rechercher par produit, numéro de lot..."
+              placeholder="Rechercher par produit, numéro de lot, ingrédient..."
               className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
