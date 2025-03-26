@@ -1,15 +1,72 @@
 
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Home, Users, Package, ShoppingCart, FileText, ChevronLeft, ChevronRight, FlaskConical } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Home, 
+  Users, 
+  Package, 
+  ShoppingBag, 
+  Scissors, 
+  FileText, 
+  ChevronLeft, 
+  ChevronRight,
+  Menu,
+  FlaskConical
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
+
+type NavItem = {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const navItems: NavItem[] = [
+  {
+    title: "Tableau de bord",
+    href: "/",
+    icon: Home,
+  },
+  {
+    title: "Clients",
+    href: "/clients",
+    icon: Users,
+  },
+  {
+    title: "Produits",
+    href: "/products",
+    icon: Package,
+  },
+  {
+    title: "Commandes",
+    href: "/orders",
+    icon: ShoppingBag,
+  },
+  {
+    title: "Journées de découpe",
+    href: "/cutting-days",
+    icon: Scissors,
+  },
+  {
+    title: "Traçabilité",
+    href: "/productions",
+    icon: FlaskConical,
+  },
+  {
+    title: "Synthèse",
+    href: "/summary",
+    icon: FileText,
+  },
+];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -17,15 +74,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  const navLinks = [
-    { name: 'Tableau de bord', path: '/', icon: Home },
-    { name: 'Clients', path: '/clients', icon: Users },
-    { name: 'Produits', path: '/products', icon: Package },
-    { name: 'Commandes', path: '/orders', icon: ShoppingCart },
-    { name: 'Journées de découpe', path: '/cutting-days', icon: FileText },
-    { name: 'Traçabilité', path: '/productions', icon: FlaskConical },
-  ];
-
   // Automatically close sidebar on mobile
   React.useEffect(() => {
     if (isMobile) {
@@ -44,84 +92,111 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const currentPath = location.pathname;
+  const currentRoute = navItems.find(
+    (item) => item.href === currentPath || currentPath.startsWith(item.href + '/')
+  );
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-secondary/30">
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white shadow-lg transition-all duration-300 ease-in-out",
-          sidebarOpen ? "translate-x-0 w-64" : "translate-x-[-100%] md:translate-x-0 md:w-20",
-          "md:static"
-        )}
-      >
-        {/* Logo and app name */}
-        <div className="flex items-center justify-between h-16 px-4 border-b">
-          <div className="flex items-center space-x-2">
-            <ShoppingCart className="h-6 w-6 text-primary" />
-            <span className={cn("font-semibold text-xl transition-opacity", sidebarOpen ? "opacity-100" : "opacity-0 hidden md:block")}>
-              OrderManager
-            </span>
-          </div>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
-          {navLinks.map((link) => (
-            <Button
-              key={link.path}
-              variant={location.pathname === link.path ? "default" : "ghost"}
-              className={cn(
-                "w-full justify-start mb-1",
-                location.pathname === link.path 
-                  ? "bg-primary text-primary-foreground" 
-                  : "hover:bg-secondary"
+    <div className="flex min-h-screen flex-col">
+      {/* Mobile navigation */}
+      <header className="sticky top-0 z-30 border-b bg-background md:hidden">
+        <div className="container flex h-14 items-center">
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="pr-0 sm:max-w-xs">
+              <Link 
+                to="/" 
+                className="flex items-center space-x-2"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Scissors className="h-5 w-5" />
+                <span className="font-bold">Gestionnaire de Découpe</span>
+              </Link>
+              <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
+                <div className="pl-1 pr-7">
+                  {navItems.map((item, index) => (
+                    <Link
+                      key={index}
+                      to={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground",
+                        currentPath === item.href && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </Link>
+                  ))}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+          <div className="flex items-center justify-between flex-1">
+            <Link to="/" className="flex items-center space-x-2 ml-2">
+              <Scissors className="h-5 w-5" />
+              <span className="font-bold">Gestionnaire de Découpe</span>
+            </Link>
+            <nav className="flex items-center space-x-2">
+              {currentRoute && (
+                <div className="flex items-center px-2 py-1.5 text-sm font-medium">
+                  <currentRoute.icon className="mr-2 h-4 w-4" />
+                  {currentRoute.title}
+                </div>
               )}
-              onClick={() => navigate(link.path)}
-            >
-              <link.icon className="h-5 w-5 mr-2" />
-              <span className={cn(sidebarOpen ? "opacity-100" : "opacity-0 hidden md:block")}>
-                {link.name}
-              </span>
-            </Button>
-          ))}
-        </nav>
-
-        {/* Footer with toggle button for desktop */}
-        <div className="hidden md:flex items-center justify-center p-4 border-t">
-          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-            {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
+            </nav>
+          </div>
         </div>
-      </aside>
+      </header>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && isMobile && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Mobile header */}
-      <div className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white px-4 md:hidden">
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-          <Menu className="h-5 w-5" />
-        </Button>
-        <span className="font-semibold">OrderManager</span>
+      {/* Desktop navigation */}
+      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
+        <div className="flex flex-col flex-grow border-r bg-background pt-5">
+          <div className="flex items-center justify-center px-4">
+            <Link to="/" className="flex items-center space-x-2">
+              <Scissors className="h-6 w-6" />
+              <span className="text-lg font-bold">Gestionnaire de Découpe</span>
+            </Link>
+          </div>
+          <div className="mt-8 flex flex-1 flex-col">
+            <nav className="flex-1 space-y-1 px-4">
+              {navItems.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground",
+                    currentPath === item.href && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.title}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          <div className="p-4">
+            <div className="text-xs text-muted-foreground">
+              Gestionnaire de Découpe v1.0
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main content */}
-      <main className={cn(
-        "flex-1 min-h-[calc(100vh-4rem)] md:min-h-screen transition-all duration-300",
-        sidebarOpen ? "md:ml-64" : "md:ml-20"
-      )}>
-        <div className="container px-4 py-6 mx-auto max-w-6xl animate-slide-in">
-          {children}
-        </div>
-      </main>
+      <div className="md:pl-64 flex flex-col flex-1">
+        <main className="flex-1">
+          <div className="container py-6">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
