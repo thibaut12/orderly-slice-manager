@@ -10,7 +10,8 @@ import {
   FileText, 
   ChevronRight,
   Menu,
-  X
+  X,
+  FlaskConical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,11 @@ const navItems: NavItem[] = [
     title: "Journées de découpe",
     href: "/cutting-days",
     icon: Scissors,
+  },
+  {
+    title: "Traçabilité",
+    href: "/productions",
+    icon: FlaskConical,
   },
   {
     title: "Synthèse",
