@@ -91,6 +91,8 @@ export interface Production {
   ingredients: Ingredient[];
   autoclaveNumber?: string;
   temperature?: number;
+  startTemperature?: number; // Température de départ
+  midCycleTemperature?: number; // Température au milieu du cycle
   duration?: number; // en minutes
   quantityProduced: number;
   stoveTest?: 'validé' | 'non-validé' | 'en-attente';

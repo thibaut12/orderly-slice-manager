@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProductions } from '@/hooks/useProductions';
@@ -51,6 +52,8 @@ const ProductionDetail = () => {
     ingredients: [],
     autoclaveNumber: '',
     temperature: undefined,
+    startTemperature: undefined,
+    midCycleTemperature: undefined,
     duration: undefined,
     quantityProduced: 0,
     stoveTest: 'en-attente',
@@ -300,7 +303,7 @@ const ProductionDetail = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="temperature">Température (°C)</Label>
+                  <Label htmlFor="temperature">Température cible (°C)</Label>
                   <Input
                     id="temperature"
                     name="temperature"
@@ -319,6 +322,32 @@ const ProductionDetail = () => {
                     type="number"
                     min="0"
                     value={formData.duration !== undefined ? formData.duration : ''}
+                    onChange={handleNumberChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startTemperature">Température de départ (°C)</Label>
+                  <Input
+                    id="startTemperature"
+                    name="startTemperature"
+                    type="number"
+                    min="0"
+                    value={formData.startTemperature !== undefined ? formData.startTemperature : ''}
+                    onChange={handleNumberChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="midCycleTemperature">Température mi-cycle (°C)</Label>
+                  <Input
+                    id="midCycleTemperature"
+                    name="midCycleTemperature"
+                    type="number"
+                    min="0"
+                    value={formData.midCycleTemperature !== undefined ? formData.midCycleTemperature : ''}
                     onChange={handleNumberChange}
                   />
                 </div>

@@ -32,7 +32,15 @@ export const exportProductionToPDF = (production: Production) => {
   }
   
   if (production.temperature) {
-    generalInfos.push([`Température:`, `${production.temperature} °C`]);
+    generalInfos.push([`Température cible:`, `${production.temperature} °C`]);
+  }
+  
+  if (production.startTemperature) {
+    generalInfos.push([`Température de départ:`, `${production.startTemperature} °C`]);
+  }
+  
+  if (production.midCycleTemperature) {
+    generalInfos.push([`Température mi-cycle:`, `${production.midCycleTemperature} °C`]);
   }
   
   if (production.duration) {
