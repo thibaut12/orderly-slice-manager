@@ -51,6 +51,7 @@ export const exportProductionToPDF = (production: Production) => {
     generalInfos.push([`Test d'étuve:`, `${production.stoveTest}`]);
   }
   
+  // Utiliser autoTable correctement depuis jsPDF avec la dépendance jspdf-autotable
   autoTable(doc, {
     startY: 35,
     head: [['Information', 'Valeur']],
@@ -60,11 +61,11 @@ export const exportProductionToPDF = (production: Production) => {
   
   // Add ingredients section if there are any
   if (production.ingredients && production.ingredients.length > 0) {
-    // On utilise une variable pour stocker la position Y après la dernière table
-    const autoTableOutput = doc.autoTable.previous;
-    const ingredientsY = autoTableOutput ? autoTableOutput.finalY : 35;
+    // On récupère la dernière position Y après la table précédente
+    const previousTableEndY = (doc as any)._lastAutoTable.finalY || 35;
+    const ingredientsY = previousTableEndY + 10;
     
-    doc.text('Ingrédients et traçabilité', 14, ingredientsY + 10);
+    doc.text('Ingrédients et traçabilité', 14, ingredientsY);
     
     const ingredientsData = production.ingredients.map((ingredient: Ingredient) => [
       ingredient.name,
@@ -73,7 +74,7 @@ export const exportProductionToPDF = (production: Production) => {
     ]);
     
     autoTable(doc, {
-      startY: ingredientsY + 15,
+      startY: ingredientsY + 5,
       head: [['Ingrédient', 'N° de lot', 'Quantité']],
       body: ingredientsData,
       headStyles: { fillColor: [41, 128, 185] },
@@ -82,13 +83,13 @@ export const exportProductionToPDF = (production: Production) => {
   
   // Add notes if any
   if (production.notes) {
-    const autoTableOutput = doc.autoTable.previous;
-    const notesY = autoTableOutput ? autoTableOutput.finalY : 35;
+    const previousTableEndY = (doc as any)._lastAutoTable.finalY || 35;
+    const notesY = previousTableEndY + 10;
     
-    doc.text('Notes', 14, notesY + 10);
+    doc.text('Notes', 14, notesY);
     
     autoTable(doc, {
-      startY: notesY + 15,
+      startY: notesY + 5,
       body: [[production.notes]],
       styles: { overflow: 'linebreak', cellWidth: 'auto' },
     });

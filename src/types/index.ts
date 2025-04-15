@@ -43,6 +43,7 @@ export interface Order {
   deliveryDate?: Date;
   notes?: string;
   cuttingDayId?: string; // Référence à la journée de découpe associée
+  status?: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -111,4 +112,22 @@ export interface FilterOptions {
   dateFrom?: Date;
   dateTo?: Date;
   cuttingDayId?: string;
+  status?: string;
+}
+
+// Interface pour l'authentification
+export interface User {
+  id: string;
+  username: string;
+  password: string; // Dans une vraie application, il faudrait stocker un hash
+  role: 'admin' | 'user';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: User | null;
+  loading: boolean;
+  error: string | null;
 }

@@ -3,8 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -21,49 +23,108 @@ import ProductionsList from "./pages/productions/ProductionsList";
 import ProductionDetail from "./pages/productions/ProductionDetail";
 import Summary from "./pages/summary/Summary";
 import NotFound from "./pages/NotFound";
+import LoginPage from "./pages/LoginPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AppProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            
-            {/* Routes Clients */}
-            <Route path="/clients" element={<ClientsList />} />
-            <Route path="/clients/:id" element={<ClientDetail />} />
-            
-            {/* Routes Produits */}
-            <Route path="/products" element={<ProductsList />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
-            
-            {/* Routes Commandes */}
-            <Route path="/orders" element={<OrdersList />} />
-            <Route path="/orders/new" element={<OrderCreate />} />
-            <Route path="/orders/:id" element={<OrderDetail />} />
-            
-            {/* Routes Journées de découpe */}
-            <Route path="/cutting-days" element={<CuttingDaysList />} />
-            <Route path="/cutting-days/:id" element={<CuttingDayDetail />} />
-            
-            {/* Routes Productions (traçabilité) */}
-            <Route path="/productions" element={<ProductionsList />} />
-            <Route path="/productions/:id" element={<ProductionDetail />} />
-            
-            {/* Synthèse */}
-            <Route path="/summary" element={<Summary />} />
-            
-            {/* Page 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Route publique pour la connexion */}
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Routes protégées */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Routes Clients */}
+              <Route path="/clients" element={
+                <ProtectedRoute>
+                  <ClientsList />
+                </ProtectedRoute>
+              } />
+              <Route path="/clients/:id" element={
+                <ProtectedRoute>
+                  <ClientDetail />
+                </ProtectedRoute>
+              } />
+              
+              {/* Routes Produits */}
+              <Route path="/products" element={
+                <ProtectedRoute>
+                  <ProductsList />
+                </ProtectedRoute>
+              } />
+              <Route path="/products/:id" element={
+                <ProtectedRoute>
+                  <ProductDetail />
+                </ProtectedRoute>
+              } />
+              
+              {/* Routes Commandes */}
+              <Route path="/orders" element={
+                <ProtectedRoute>
+                  <OrdersList />
+                </ProtectedRoute>
+              } />
+              <Route path="/orders/new" element={
+                <ProtectedRoute>
+                  <OrderCreate />
+                </ProtectedRoute>
+              } />
+              <Route path="/orders/:id" element={
+                <ProtectedRoute>
+                  <OrderDetail />
+                </ProtectedRoute>
+              } />
+              
+              {/* Routes Journées de découpe */}
+              <Route path="/cutting-days" element={
+                <ProtectedRoute>
+                  <CuttingDaysList />
+                </ProtectedRoute>
+              } />
+              <Route path="/cutting-days/:id" element={
+                <ProtectedRoute>
+                  <CuttingDayDetail />
+                </ProtectedRoute>
+              } />
+              
+              {/* Routes Productions (traçabilité) */}
+              <Route path="/productions" element={
+                <ProtectedRoute>
+                  <ProductionsList />
+                </ProtectedRoute>
+              } />
+              <Route path="/productions/:id" element={
+                <ProtectedRoute>
+                  <ProductionDetail />
+                </ProtectedRoute>
+              } />
+              
+              {/* Synthèse */}
+              <Route path="/summary" element={
+                <ProtectedRoute>
+                  <Summary />
+                </ProtectedRoute>
+              } />
+              
+              {/* Redirection par défaut vers la connexion */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AppProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

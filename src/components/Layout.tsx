@@ -12,7 +12,8 @@ import {
   ChevronRight, 
   Menu,
   X,
-  FlaskConical
+  FlaskConical,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,15 @@ import { Separator } from '@/components/ui/separator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -74,11 +84,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { authState, logout } = useAuth();
 
   const currentPath = location.pathname;
   const currentRoute = navItems.find(
     (item) => item.href === currentPath || currentPath.startsWith(item.href + '/')
   );
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -123,6 +139,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   ))}
                 </div>
               </ScrollArea>
+              
+              <div className="absolute bottom-4 left-4 right-4">
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center"
+                  onClick={() => {
+                    handleLogout();
+                    setOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Se déconnecter
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
           <div className="flex items-center justify-between flex-1">
@@ -140,6 +170,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {currentRoute.title}
                 </div>
               )}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <span className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      {authState.user?.username.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    {authState.user?.username || 'Utilisateur'}
+                    <p className="text-xs text-muted-foreground">
+                      {authState.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                    </p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Se déconnecter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           </div>
         </div>
@@ -174,8 +227,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ))}
             </nav>
           </div>
-          <div className="p-4">
-            <div className="text-xs text-muted-foreground">
+          <div className="p-4 border-t">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-accent">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    {authState.user?.username.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-medium">{authState.user?.username}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {authState.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                    </p>
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Se déconnecter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <div className="mt-3 text-xs text-muted-foreground">
               Gestionnaire de Découpe v1.0
             </div>
           </div>
