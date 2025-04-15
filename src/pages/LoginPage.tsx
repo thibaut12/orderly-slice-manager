@@ -108,8 +108,8 @@ const LoginPage: React.FC = () => {
         <div className="mt-4 text-center text-sm text-gray-500">
           <div className="mt-2">
             <p>Utilisateurs de démonstration :</p>
-            <p>admin / admin123</p>
-            <p>user / user123</p>
+            <p><strong>admin / admin123</strong></p>
+            <p><strong>user / user123</strong></p>
           </div>
         </div>
       </div>

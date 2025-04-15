@@ -76,18 +76,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      // Simuler une latence réseau
-      setAuthState(prev => ({ ...prev, loading: true }));
+      // Mettre l'état en chargement
+      setAuthState(prev => ({ ...prev, loading: true, error: null }));
       
-      // Dans une vraie app, ce serait un appel API à un backend sécurisé
+      // Pour simuler un délai réseau (optionnel)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Vérifier les identifiants
       const user = predefinedUsers.find(
         u => u.username === username && u.password === password
       );
       
       if (user) {
-        const { password, ...safeUser } = user; // Ne pas stocker le mot de passe
+        // Clone l'utilisateur sans le mot de passe pour le stockage
+        const { password: _, ...safeUser } = user;
+        
+        // Stocker l'utilisateur dans localStorage
         localStorage.setItem('currentUser', JSON.stringify(safeUser));
         
+        // Mettre à jour l'état
         setAuthState({
           isAuthenticated: true,
           user: safeUser as User,
@@ -95,13 +102,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error: null
         });
         
+        // Afficher un toast de succès
         toast({
           title: "Connexion réussie",
           description: `Bienvenue ${username} !`,
         });
         
+        console.log("Connexion réussie pour:", username);
         return true;
       } else {
+        // Identifiants incorrects
         setAuthState({
           isAuthenticated: false,
           user: null,
@@ -109,15 +119,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error: "Nom d'utilisateur ou mot de passe incorrect"
         });
         
+        // Afficher un toast d'erreur
         toast({
           variant: "destructive",
           title: "Échec de la connexion",
           description: "Identifiants incorrects. Veuillez réessayer.",
         });
         
+        console.log("Échec de connexion pour:", username);
         return false;
       }
     } catch (error) {
+      // En cas d'erreur
       setAuthState({
         isAuthenticated: false,
         user: null,
@@ -125,18 +138,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error: "Une erreur s'est produite lors de la connexion"
       });
       
+      // Afficher un toast d'erreur
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
         description: "Une erreur s'est produite. Veuillez réessayer.",
       });
       
+      console.error("Erreur lors de la connexion:", error);
       return false;
     }
   };
 
   const logout = () => {
+    // Supprimer l'utilisateur du localStorage
     localStorage.removeItem('currentUser');
+    
+    // Mettre à jour l'état
     setAuthState({
       isAuthenticated: false,
       user: null,
@@ -144,6 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       error: null
     });
     
+    // Afficher un toast de confirmation
     toast({
       title: "Déconnexion",
       description: "Vous avez été déconnecté avec succès.",

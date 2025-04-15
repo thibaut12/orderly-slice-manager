@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -125,6 +124,7 @@ export interface User {
   updatedAt: Date;
 }
 
+// Mise à jour de l'interface AuthState pour corriger les types
 export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;

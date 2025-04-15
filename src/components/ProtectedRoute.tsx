@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { authState } = useAuth();
   
-  // On affiche rien pendant le chargement
+  // Affiche un chargement pendant la vérification de l'authentification
   if (authState.loading) {
     return (
       <div className="h-screen flex items-center justify-center">

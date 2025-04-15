@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, Package, Plus, FileText, Trash2, Edit, CheckSquare, 
@@ -70,10 +70,11 @@ const Orders = () => {
   
   const handleStatusChange = (status: string, checked: boolean) => {
     setFilterOptions(prev => {
+      const currentStatus = prev.status || [];
       if (checked) {
-        return { ...prev, status: [...(prev.status || []), status] };
+        return { ...prev, status: [...currentStatus, status] };
       } else {
-        return { ...prev, status: (prev.status || []).filter(s => s !== status) };
+        return { ...prev, status: currentStatus.filter(s => s !== status) };
       }
     });
   };
@@ -469,4 +470,3 @@ const Orders = () => {
 };
 
 export default Orders;
-
