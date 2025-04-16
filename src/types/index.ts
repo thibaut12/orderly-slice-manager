@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -111,7 +112,7 @@ export interface FilterOptions {
   dateFrom?: Date;
   dateTo?: Date;
   cuttingDayId?: string;
-  status?: string;
+  status?: string[];  // Changement de type: string -> string[]
 }
 
 // Interface pour l'authentification

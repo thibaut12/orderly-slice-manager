@@ -52,6 +52,13 @@ export const useOrderOperations = (
       );
     }
 
+    // Apply status filter (mise à jour pour utiliser le tableau)
+    if (options.status && options.status.length > 0) {
+      filteredOrders = filteredOrders.filter(order => 
+        order.status && options.status?.includes(order.status)
+      );
+    }
+
     // Apply date range filter
     if (options.dateFrom) {
       filteredOrders = filteredOrders.filter(

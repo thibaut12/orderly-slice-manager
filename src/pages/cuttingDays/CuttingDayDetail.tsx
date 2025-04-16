@@ -59,11 +59,11 @@ const CuttingDayDetail = () => {
   };
 
   const handleSaveChanges = async () => {
-    if (!cuttingDay) return;
+    if (!cuttingDay || !editedDate) return;
 
     const updatedCuttingDayData = {
       description: editedDescription,
-      date: editedDate ? editedDate.toISOString() : cuttingDay.date,
+      date: editedDate,
     };
 
     updateCuttingDay(cuttingDay.id, updatedCuttingDayData);
@@ -239,6 +239,7 @@ const CuttingDayDetail = () => {
                         date > new Date()
                       }
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
