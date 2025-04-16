@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Scissors, Lock, User } from 'lucide-react';
@@ -101,12 +100,6 @@ const LoginPage: React.FC = () => {
               >
                 {isLoading ? 'Connexion en cours...' : 'Se connecter'}
               </Button>
-              
-              <div className="text-center text-sm">
-                <p className="font-bold text-gray-700">Utilisateurs disponibles:</p>
-                <p>Utilisateur: <strong>admin</strong> / Mot de passe: <strong>admin123</strong></p>
-                <p>Utilisateur: <strong>user</strong> / Mot de passe: <strong>user123</strong></p>
-              </div>
             </CardFooter>
           </form>
         </Card>
