@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthState } from '@/types';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 
 // Définir l'interface pour notre contexte d'authentification
@@ -42,7 +42,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading: true,
     error: null
   });
-  const { toast } = useToast();
 
   // Vérifier s'il y a un utilisateur déjà connecté (localStorage)
   useEffect(() => {
@@ -103,8 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         // Afficher un toast de succès
-        toast({
-          title: "Connexion réussie",
+        toast.success("Connexion réussie", {
           description: `Bienvenue ${username} !`,
         });
         
@@ -120,9 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         // Afficher un toast d'erreur
-        toast({
-          variant: "destructive",
-          title: "Échec de la connexion",
+        toast.error("Échec de la connexion", {
           description: "Identifiants incorrects. Veuillez réessayer.",
         });
         
@@ -139,9 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       // Afficher un toast d'erreur
-      toast({
-        variant: "destructive",
-        title: "Erreur de connexion",
+      toast.error("Erreur de connexion", {
         description: "Une erreur s'est produite. Veuillez réessayer.",
       });
       
@@ -163,8 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     // Afficher un toast de confirmation
-    toast({
-      title: "Déconnexion",
+    toast.success("Déconnexion", {
       description: "Vous avez été déconnecté avec succès.",
     });
   };

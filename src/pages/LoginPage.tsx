@@ -93,7 +93,7 @@ const LoginPage: React.FC = () => {
               </div>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-4">
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -101,17 +101,15 @@ const LoginPage: React.FC = () => {
               >
                 {isLoading ? 'Connexion en cours...' : 'Se connecter'}
               </Button>
+              
+              <div className="text-center text-sm">
+                <p className="font-bold text-gray-700">Utilisateurs disponibles:</p>
+                <p>Utilisateur: <strong>admin</strong> / Mot de passe: <strong>admin123</strong></p>
+                <p>Utilisateur: <strong>user</strong> / Mot de passe: <strong>user123</strong></p>
+              </div>
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="mt-4 text-center text-sm text-gray-500">
-          <div className="mt-2">
-            <p>Utilisateurs de démonstration :</p>
-            <p><strong>admin / admin123</strong></p>
-            <p><strong>user / user123</strong></p>
-          </div>
-        </div>
       </div>
     </div>
   );
