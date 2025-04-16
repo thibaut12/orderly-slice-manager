@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -63,7 +64,7 @@ const CuttingDayDetail = () => {
 
     const updatedCuttingDayData = {
       description: editedDescription,
-      date: editedDate,
+      date: editedDate, // Nous passons directement l'objet Date
     };
 
     updateCuttingDay(cuttingDay.id, updatedCuttingDayData);
