@@ -329,7 +329,7 @@ const UsersList = () => {
                   <Label htmlFor="edit-role">Rôle</Label>
                   <Select 
                     value={editingUser.role} 
-                    onValueChange={(value: 'admin' | 'user') => setEditingUser({...editingUser, role: value})}
+                    onValueChange={(value: 'admin' | 'user') => setEditingUser({...editingUser, role: value as 'admin' | 'user'})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un rôle" />
