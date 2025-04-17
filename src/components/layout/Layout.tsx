@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Users, 
@@ -11,13 +11,23 @@ import {
   ChevronRight,
   Menu,
   X,
-  FlaskConical
+  FlaskConical,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -69,12 +79,19 @@ const navItems: NavItem[] = [
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
+  const { authState, logout } = useAuth();
 
   const currentPath = location.pathname;
   const currentRoute = navItems.find(
     (item) => item.href === currentPath || currentPath.startsWith(item.href + '/')
   );
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -115,6 +132,20 @@ const Layout = ({ children }: LayoutProps) => {
                   ))}
                 </div>
               </ScrollArea>
+              
+              <div className="absolute bottom-4 left-4 right-4">
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center"
+                  onClick={() => {
+                    handleLogout();
+                    setOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Se déconnecter
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
           <div className="flex items-center justify-between flex-1">
@@ -129,6 +160,29 @@ const Layout = ({ children }: LayoutProps) => {
                   {currentRoute.title}
                 </div>
               )}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <span className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      {authState.user?.username.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    {authState.user?.username || 'Utilisateur'}
+                    <p className="text-xs text-muted-foreground">
+                      {authState.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                    </p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Se déconnecter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           </div>
         </div>
@@ -138,30 +192,55 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow border-r bg-background pt-5">
           <div className="flex items-center justify-center px-4">
-            <Link to="/" className="flex items-center space-x-2">
+            <div 
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={() => navigate('/')}
+            >
               <Scissors className="h-6 w-6" />
               <span className="text-lg font-bold">Gestionnaire de Découpe</span>
-            </Link>
+            </div>
           </div>
           <div className="mt-8 flex flex-1 flex-col">
             <nav className="flex-1 space-y-1 px-4">
               {navItems.map((item, index) => (
-                <Link
+                <div
                   key={index}
-                  to={item.href}
                   className={cn(
-                    "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground",
-                    currentPath === item.href && "bg-accent text-accent-foreground"
+                    "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                    (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground"
                   )}
+                  onClick={() => navigate(item.href)}
                 >
                   <item.icon className="h-5 w-5" />
                   {item.title}
-                </Link>
+                </div>
               ))}
             </nav>
           </div>
-          <div className="p-4">
-            <div className="text-xs text-muted-foreground">
+          <div className="p-4 border-t">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-accent">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    {authState.user?.username.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-medium">{authState.user?.username}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {authState.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                    </p>
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Se déconnecter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <div className="mt-3 text-xs text-muted-foreground">
               Gestionnaire de Découpe v1.0
             </div>
           </div>
