@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { 
@@ -37,7 +36,7 @@ const UsersList = () => {
     { 
       id: '1', 
       username: 'admin', 
-      password: '••••••••', 
+      password: 'admin123', 
       role: 'admin',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -45,7 +44,7 @@ const UsersList = () => {
     { 
       id: '2', 
       username: 'utilisateur', 
-      password: '••••••••', 
+      password: 'user123', 
       role: 'user',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -58,6 +57,14 @@ const UsersList = () => {
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [visiblePasswords, setVisiblePasswords] = useState<{[key: string]: boolean}>({});
+
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
 
   const handleAddUser = () => {
     if (!newUser.username || !newUser.password) {
@@ -139,6 +146,10 @@ const UsersList = () => {
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getDisplayPassword = (user: UserType) => {
+    return visiblePasswords[user.id] ? user.password : '••••••••';
+  };
 
   return (
     <Layout>
@@ -231,6 +242,7 @@ const UsersList = () => {
               <TableRow>
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Nom d'utilisateur</TableHead>
+                <TableHead>Mot de passe</TableHead>
                 <TableHead>Rôle</TableHead>
                 <TableHead>Date de création</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -239,7 +251,7 @@ const UsersList = () => {
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                     Aucun utilisateur trouvé
                   </TableCell>
                 </TableRow>
@@ -253,6 +265,19 @@ const UsersList = () => {
                     </TableCell>
                     <TableCell className="font-medium">
                       {user.username}
+                    </TableCell>
+                    <TableCell className="relative">
+                      <div className="flex items-center">
+                        <span className="mr-2">{getDisplayPassword(user)}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                          onClick={() => togglePasswordVisibility(user.id)}
+                        >
+                          {visiblePasswords[user.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
