@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   FlaskConical,
-  LogOut
+  LogOut,
+  UserCog
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ type NavItem = {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -75,6 +77,12 @@ const navItems: NavItem[] = [
     href: "/summary",
     icon: FileText,
   },
+  {
+    title: "Utilisateurs",
+    href: "/users",
+    icon: UserCog,
+    adminOnly: true,
+  },
 ];
 
 const Layout = ({ children }: LayoutProps) => {
@@ -92,6 +100,11 @@ const Layout = ({ children }: LayoutProps) => {
     logout();
     navigate('/login');
   };
+
+  // Filter nav items based on user role
+  const filteredNavItems = navItems.filter(
+    item => !item.adminOnly || authState.user?.role === 'admin'
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -116,7 +129,7 @@ const Layout = ({ children }: LayoutProps) => {
               </Link>
               <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
                 <div className="pl-1 pr-7">
-                  {navItems.map((item, index) => (
+                  {filteredNavItems.map((item, index) => (
                     <Link
                       key={index}
                       to={item.href}
@@ -202,7 +215,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
           <div className="mt-8 flex flex-1 flex-col">
             <nav className="flex-1 space-y-1 px-4">
-              {navItems.map((item, index) => (
+              {filteredNavItems.map((item, index) => (
                 <div
                   key={index}
                   className={cn(

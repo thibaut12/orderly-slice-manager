@@ -24,6 +24,7 @@ import ProductionDetail from "./pages/productions/ProductionDetail";
 import Summary from "./pages/summary/Summary";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
+import UsersList from "./pages/users/UsersList";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,13 @@ const App = () => (
               <Route path="/productions/:id" element={
                 <ProtectedRoute>
                   <ProductionDetail />
+                </ProtectedRoute>
+              } />
+              
+              {/* Gestion des utilisateurs */}
+              <Route path="/users" element={
+                <ProtectedRoute>
+                  <UsersList />
                 </ProtectedRoute>
               } />
               
