@@ -1,19 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Users, 
-  Package, 
-  ShoppingBag, 
-  Scissors, 
-  FileText, 
-  ChevronLeft, 
-  ChevronRight, 
-  Menu,
-  X,
-  FlaskConical,
-  LogOut
-} from 'lucide-react';
+import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronLeft, ChevronRight, Menu, X, FlaskConical, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -21,82 +8,64 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface LayoutProps {
   children: React.ReactNode;
 }
-
 type NavItem = {
   title: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{
+    className?: string;
+  }>;
 };
-
-const navItems: NavItem[] = [
-  {
-    title: "Tableau de bord",
-    href: "/",
-    icon: Home,
-  },
-  {
-    title: "Clients",
-    href: "/clients",
-    icon: Users,
-  },
-  {
-    title: "Produits",
-    href: "/products",
-    icon: Package,
-  },
-  {
-    title: "Commandes",
-    href: "/orders",
-    icon: ShoppingBag,
-  },
-  {
-    title: "Journées de découpe",
-    href: "/cutting-days",
-    icon: Scissors,
-  },
-  {
-    title: "Traçabilité",
-    href: "/productions",
-    icon: FlaskConical,
-  },
-  {
-    title: "Synthèse",
-    href: "/summary",
-    icon: FileText,
-  },
-];
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const navItems: NavItem[] = [{
+  title: "Tableau de bord",
+  href: "/",
+  icon: Home
+}, {
+  title: "Clients",
+  href: "/clients",
+  icon: Users
+}, {
+  title: "Produits",
+  href: "/products",
+  icon: Package
+}, {
+  title: "Commandes",
+  href: "/orders",
+  icon: ShoppingBag
+}, {
+  title: "Journées de découpe",
+  href: "/cutting-days",
+  icon: Scissors
+}, {
+  title: "Traçabilité",
+  href: "/productions",
+  icon: FlaskConical
+}, {
+  title: "Synthèse",
+  href: "/summary",
+  icon: FileText
+}];
+const Layout: React.FC<LayoutProps> = ({
+  children
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { authState, logout } = useAuth();
-
+  const {
+    authState,
+    logout
+  } = useAuth();
   const currentPath = location.pathname;
-  const currentRoute = navItems.find(
-    (item) => item.href === currentPath || currentPath.startsWith(item.href + '/')
-  );
-  
+  const currentRoute = navItems.find(item => item.href === currentPath || currentPath.startsWith(item.href + '/'));
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
-  return (
-    <div className="flex min-h-screen flex-col">
+  return <div className="flex min-h-screen flex-col">
       {/* Mobile navigation */}
       <header className="sticky top-0 z-30 border-b bg-background md:hidden">
         <div className="container flex h-14 items-center">
@@ -108,46 +77,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="pr-0 sm:max-w-xs">
-              <div 
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => {
-                  navigate('/');
-                  setOpen(false);
-                }}
-              >
+              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => {
+              navigate('/');
+              setOpen(false);
+            }}>
                 <Scissors className="h-5 w-5" />
                 <span className="font-bold">Gestionnaire de Découpe</span>
               </div>
               <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
                 <div className="pl-1 pr-7">
-                  {navItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                        currentPath === item.href && "bg-accent text-accent-foreground"
-                      )}
-                      onClick={() => {
-                        navigate(item.href);
-                        setOpen(false);
-                      }}
-                    >
+                  {navItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", currentPath === item.href && "bg-accent text-accent-foreground")} onClick={() => {
+                  navigate(item.href);
+                  setOpen(false);
+                }}>
                       <item.icon className="h-4 w-4" />
                       {item.title}
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </ScrollArea>
               
               <div className="absolute bottom-4 left-4 right-4">
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center justify-center"
-                  onClick={() => {
-                    handleLogout();
-                    setOpen(false);
-                  }}
-                >
+                <Button variant="outline" className="w-full flex items-center justify-center" onClick={() => {
+                handleLogout();
+                setOpen(false);
+              }}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Se déconnecter
                 </Button>
@@ -155,24 +108,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </SheetContent>
           </Sheet>
           <div className="flex items-center justify-between flex-1">
-            <div 
-              className="flex items-center space-x-2 ml-2 cursor-pointer"
-              onClick={() => navigate('/')}
-            >
-              <img
-                src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png"
-                alt="AgriDécoupe"
-                className="h-12 w-12"
-              />
+            <div className="flex items-center space-x-2 ml-2 cursor-pointer" onClick={() => navigate('/')}>
+              <img src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png" alt="AgriDécoupe" className="h-12 w-12" />
               <span className="font-bold">Gestionnaire de Découpe</span>
             </div>
             <nav className="flex items-center space-x-2">
-              {currentRoute && (
-                <div className="flex items-center px-2 py-1.5 text-sm font-medium">
+              {currentRoute && <div className="flex items-center px-2 py-1.5 text-sm font-medium">
                   <currentRoute.icon className="mr-2 h-4 w-4" />
                   {currentRoute.title}
-                </div>
-              )}
+                </div>}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -205,33 +149,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow border-r bg-background pt-5">
           <div className="flex items-center justify-center px-4">
-            <div 
-              className="flex items-center space-x-2 cursor-pointer"
-              onClick={() => navigate('/')}
-            >
-              <img
-                src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png"
-                alt="AgriDécoupe"
-                className="h-12 w-12"
-              />
-              <span className="text-lg font-bold">Gestionnaire de Découpe</span>
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
+              <img src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png" alt="AgriDécoupe" className="h-36 w-36" />
+              
             </div>
           </div>
           <div className="mt-8 flex flex-1 flex-col">
             <nav className="flex-1 space-y-1 px-4">
-              {navItems.map((item, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                    (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground"
-                  )}
-                  onClick={() => navigate(item.href)}
-                >
+              {navItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground")} onClick={() => navigate(item.href)}>
                   <item.icon className="h-5 w-5" />
                   {item.title}
-                </div>
-              ))}
+                </div>)}
             </nav>
           </div>
           <div className="p-4 border-t">
@@ -272,8 +200,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Layout;
