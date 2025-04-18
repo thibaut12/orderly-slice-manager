@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -101,7 +100,6 @@ const Layout = ({ children }: LayoutProps) => {
     navigate('/login');
   };
 
-  // Filter nav items based on user role
   const filteredNavItems = navItems.filter(
     item => !item.adminOnly || authState.user?.role === 'admin'
   );
@@ -121,11 +119,11 @@ const Layout = ({ children }: LayoutProps) => {
             <SheetContent side="left" className="pr-0 sm:max-w-xs">
               <Link 
                 to="/" 
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-4"
                 onClick={() => setOpen(false)}
               >
-                <Scissors className="h-5 w-5" />
-                <span className="font-bold">Gestionnaire de Découpe</span>
+                <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-8 w-8" />
+                <span className="font-bold text-lg text-[#1B4332]">AgriDécoupe</span>
               </Link>
               <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
                 <div className="pl-1 pr-7">
@@ -162,9 +160,9 @@ const Layout = ({ children }: LayoutProps) => {
             </SheetContent>
           </Sheet>
           <div className="flex items-center justify-between flex-1">
-            <Link to="/" className="flex items-center space-x-2 ml-2">
-              <Scissors className="h-5 w-5" />
-              <span className="font-bold">Gestionnaire de Découpe</span>
+            <Link to="/" className="flex items-center space-x-3 ml-2">
+              <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-7 w-7" />
+              <span className="font-bold text-[#1B4332]">AgriDécoupe</span>
             </Link>
             <nav className="flex items-center space-x-2">
               {currentRoute && (
@@ -204,13 +202,13 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Desktop navigation */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow border-r bg-background pt-5">
-          <div className="flex items-center justify-center px-4">
+          <div className="flex items-center justify-center px-4 pb-6">
             <div 
-              className="flex items-center space-x-2 cursor-pointer"
+              className="flex flex-col items-center space-y-2 cursor-pointer"
               onClick={() => navigate('/')}
             >
-              <Scissors className="h-6 w-6" />
-              <span className="text-lg font-bold">Gestionnaire de Découpe</span>
+              <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-12 w-12" />
+              <span className="text-xl font-bold text-[#1B4332]">AgriDécoupe</span>
             </div>
           </div>
           <div className="mt-8 flex flex-1 flex-col">
