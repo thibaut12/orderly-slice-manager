@@ -1,111 +1,76 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Users, 
-  Package, 
-  ShoppingBag, 
-  Scissors, 
-  FileText, 
-  ChevronRight,
-  Menu,
-  X,
-  FlaskConical,
-  LogOut,
-  UserCog
-} from 'lucide-react';
+import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronRight, Menu, X, FlaskConical, LogOut, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface LayoutProps {
   children: React.ReactNode;
 }
-
 type NavItem = {
   title: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{
+    className?: string;
+  }>;
   adminOnly?: boolean;
 };
-
-const navItems: NavItem[] = [
-  {
-    title: "Tableau de bord",
-    href: "/",
-    icon: Home,
-  },
-  {
-    title: "Clients",
-    href: "/clients",
-    icon: Users,
-  },
-  {
-    title: "Produits",
-    href: "/products",
-    icon: Package,
-  },
-  {
-    title: "Commandes",
-    href: "/orders",
-    icon: ShoppingBag,
-  },
-  {
-    title: "Journées de découpe",
-    href: "/cutting-days",
-    icon: Scissors,
-  },
-  {
-    title: "Traçabilité",
-    href: "/productions",
-    icon: FlaskConical,
-  },
-  {
-    title: "Synthèse",
-    href: "/summary",
-    icon: FileText,
-  },
-  {
-    title: "Utilisateurs",
-    href: "/users",
-    icon: UserCog,
-    adminOnly: true,
-  },
-];
-
-const Layout = ({ children }: LayoutProps) => {
+const navItems: NavItem[] = [{
+  title: "Tableau de bord",
+  href: "/",
+  icon: Home
+}, {
+  title: "Clients",
+  href: "/clients",
+  icon: Users
+}, {
+  title: "Produits",
+  href: "/products",
+  icon: Package
+}, {
+  title: "Commandes",
+  href: "/orders",
+  icon: ShoppingBag
+}, {
+  title: "Journées de découpe",
+  href: "/cutting-days",
+  icon: Scissors
+}, {
+  title: "Traçabilité",
+  href: "/productions",
+  icon: FlaskConical
+}, {
+  title: "Synthèse",
+  href: "/summary",
+  icon: FileText
+}, {
+  title: "Utilisateurs",
+  href: "/users",
+  icon: UserCog,
+  adminOnly: true
+}];
+const Layout = ({
+  children
+}: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-  const { authState, logout } = useAuth();
-
+  const {
+    authState,
+    logout
+  } = useAuth();
   const currentPath = location.pathname;
-  const currentRoute = navItems.find(
-    (item) => item.href === currentPath || currentPath.startsWith(item.href + '/')
-  );
-  
+  const currentRoute = navItems.find(item => item.href === currentPath || currentPath.startsWith(item.href + '/'));
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
-  const filteredNavItems = navItems.filter(
-    item => !item.adminOnly || authState.user?.role === 'admin'
-  );
-
-  return (
-    <div className="flex min-h-screen flex-col">
+  const filteredNavItems = navItems.filter(item => !item.adminOnly || authState.user?.role === 'admin');
+  return <div className="flex min-h-screen flex-col">
       {/* Mobile navigation */}
       <header className="sticky top-0 z-30 border-b bg-background md:hidden">
         <div className="container flex h-14 items-center">
@@ -117,42 +82,24 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="pr-0 sm:max-w-xs">
-              <Link 
-                to="/" 
-                className="flex items-center space-x-4"
-                onClick={() => setOpen(false)}
-              >
+              <Link to="/" className="flex items-center space-x-4" onClick={() => setOpen(false)}>
                 <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-8 w-8" />
                 <span className="font-bold text-lg text-[#1B4332]">AgriDécoupe</span>
               </Link>
               <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
                 <div className="pl-1 pr-7">
-                  {filteredNavItems.map((item, index) => (
-                    <Link
-                      key={index}
-                      to={item.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground",
-                        currentPath === item.href && "bg-accent text-accent-foreground"
-                      )}
-                    >
+                  {filteredNavItems.map((item, index) => <Link key={index} to={item.href} onClick={() => setOpen(false)} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground", currentPath === item.href && "bg-accent text-accent-foreground")}>
                       <item.icon className="h-4 w-4" />
                       {item.title}
-                    </Link>
-                  ))}
+                    </Link>)}
                 </div>
               </ScrollArea>
               
               <div className="absolute bottom-4 left-4 right-4">
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center justify-center"
-                  onClick={() => {
-                    handleLogout();
-                    setOpen(false);
-                  }}
-                >
+                <Button variant="outline" className="w-full flex items-center justify-center" onClick={() => {
+                handleLogout();
+                setOpen(false);
+              }}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Se déconnecter
                 </Button>
@@ -165,12 +112,10 @@ const Layout = ({ children }: LayoutProps) => {
               <span className="font-bold text-[#1B4332]">AgriDécoupe</span>
             </Link>
             <nav className="flex items-center space-x-2">
-              {currentRoute && (
-                <div className="flex items-center px-2 py-1.5 text-sm font-medium">
+              {currentRoute && <div className="flex items-center px-2 py-1.5 text-sm font-medium">
                   <currentRoute.icon className="mr-2 h-4 w-4" />
                   {currentRoute.title}
-                </div>
-              )}
+                </div>}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -203,29 +148,17 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow border-r bg-background pt-5">
           <div className="flex items-center justify-center px-4 pb-6">
-            <div 
-              className="flex flex-col items-center space-y-2 cursor-pointer"
-              onClick={() => navigate('/')}
-            >
-              <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-12 w-12" />
+            <div className="flex flex-col items-center space-y-2 cursor-pointer" onClick={() => navigate('/')}>
+              <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-36 w-36" />
               <span className="text-xl font-bold text-[#1B4332]">AgriDécoupe</span>
             </div>
           </div>
           <div className="mt-8 flex flex-1 flex-col">
             <nav className="flex-1 space-y-1 px-4">
-              {filteredNavItems.map((item, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                    (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground"
-                  )}
-                  onClick={() => navigate(item.href)}
-                >
+              {filteredNavItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground")} onClick={() => navigate(item.href)}>
                   <item.icon className="h-5 w-5" />
                   {item.title}
-                </div>
-              ))}
+                </div>)}
             </nav>
           </div>
           <div className="p-4 border-t">
@@ -266,8 +199,6 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Layout;
