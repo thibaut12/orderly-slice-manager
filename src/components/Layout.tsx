@@ -9,9 +9,11 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 type NavItem = {
   title: string;
   href: string;
@@ -19,35 +21,45 @@ type NavItem = {
     className?: string;
   }>;
 };
-const navItems: NavItem[] = [{
-  title: "Tableau de bord",
-  href: "/",
-  icon: Home
-}, {
-  title: "Clients",
-  href: "/clients",
-  icon: Users
-}, {
-  title: "Produits",
-  href: "/products",
-  icon: Package
-}, {
-  title: "Commandes",
-  href: "/orders",
-  icon: ShoppingBag
-}, {
-  title: "Journées de découpe",
-  href: "/cutting-days",
-  icon: Scissors
-}, {
-  title: "Traçabilité",
-  href: "/productions",
-  icon: FlaskConical
-}, {
-  title: "Synthèse",
-  href: "/summary",
-  icon: FileText
-}];
+
+const navItems: NavItem[] = [
+  {
+    title: "Tableau de bord",
+    href: "/",
+    icon: Home
+  },
+  {
+    title: "Clients",
+    href: "/clients",
+    icon: Users
+  },
+  {
+    title: "Produits",
+    href: "/products",
+    icon: Package
+  },
+  {
+    title: "Commandes",
+    href: "/orders",
+    icon: ShoppingBag
+  },
+  {
+    title: "Journées de découpe",
+    href: "/cutting-days",
+    icon: Scissors
+  },
+  {
+    title: "Traçabilité",
+    href: "/productions",
+    icon: FlaskConical
+  },
+  {
+    title: "Synthèse",
+    href: "/summary",
+    icon: FileText
+  }
+];
+
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
@@ -65,8 +77,8 @@ const Layout: React.FC<LayoutProps> = ({
     logout();
     navigate('/login');
   };
+
   return <div className="flex min-h-screen flex-col">
-      {/* Mobile navigation */}
       <header className="sticky top-0 z-30 border-b bg-background md:hidden">
         <div className="container flex h-14 items-center">
           <Sheet open={open} onOpenChange={setOpen}>
@@ -81,8 +93,8 @@ const Layout: React.FC<LayoutProps> = ({
               navigate('/');
               setOpen(false);
             }}>
-                <Scissors className="h-5 w-5" />
-                <span className="font-bold">Gestionnaire de Découpe</span>
+                <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-8 w-8" />
+                <span className="font-bold text-[#1B4332]">AgriDécoupe</span>
               </div>
               <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
                 <div className="pl-1 pr-7">
@@ -109,8 +121,8 @@ const Layout: React.FC<LayoutProps> = ({
           </Sheet>
           <div className="flex items-center justify-between flex-1">
             <div className="flex items-center space-x-2 ml-2 cursor-pointer" onClick={() => navigate('/')}>
-              <img src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png" alt="AgriDécoupe" className="h-12 w-12" />
-              <span className="font-bold">Gestionnaire de Découpe</span>
+              <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-7 w-7" />
+              <span className="font-bold text-[#1B4332]">AgriDécoupe</span>
             </div>
             <nav className="flex items-center space-x-2">
               {currentRoute && <div className="flex items-center px-2 py-1.5 text-sm font-medium">
@@ -145,13 +157,11 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
       </header>
 
-      {/* Desktop navigation */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow border-r bg-background pt-5">
-          <div className="flex items-center justify-center px-4">
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
-              <img src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png" alt="AgriDécoupe" className="h-36 w-36" />
-              
+          <div className="flex items-center justify-center px-4 pb-3">
+            <div className="flex flex-col items-center space-y-2 cursor-pointer" onClick={() => navigate('/')}>
+              <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-36 w-36" />
             </div>
           </div>
           <div className="mt-8 flex flex-1 flex-col">
@@ -192,7 +202,6 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
       </div>
 
-      {/* Main content */}
       <div className="md:pl-64 flex flex-col flex-1">
         <main className="flex-1">
           <div className="container py-6">
@@ -202,4 +211,5 @@ const Layout: React.FC<LayoutProps> = ({
       </div>
     </div>;
 };
+
 export default Layout;
