@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -160,7 +159,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               className="flex items-center space-x-2 ml-2 cursor-pointer"
               onClick={() => navigate('/')}
             >
-              <Scissors className="h-5 w-5" />
+              <img
+                src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png"
+                alt="AgriDécoupe"
+                className="h-12 w-12"
+              />
               <span className="font-bold">Gestionnaire de Découpe</span>
             </div>
             <nav className="flex items-center space-x-2">
@@ -206,7 +209,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               className="flex items-center space-x-2 cursor-pointer"
               onClick={() => navigate('/')}
             >
-              <Scissors className="h-6 w-6" />
+              <img
+                src="/lovable-uploads/145ba526-cef5-4de0-baa1-d33dedd364c0.png"
+                alt="AgriDécoupe"
+                className="h-12 w-12"
+              />
               <span className="text-lg font-bold">Gestionnaire de Découpe</span>
             </div>
           </div>
