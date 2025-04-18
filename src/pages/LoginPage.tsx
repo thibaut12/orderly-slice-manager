@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Scissors, Lock, User } from 'lucide-react';
+import { Lock, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,11 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Scissors className="h-12 w-12" />
+            <img 
+              src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" 
+              alt="AgriDécoupe" 
+              className="h-36 w-36 object-contain" 
+            />
           </div>
           <h1 className="text-2xl font-bold">Gestionnaire de Découpe</h1>
           <p className="text-gray-500">Connectez-vous pour accéder à l'application</p>
