@@ -147,10 +147,10 @@ const Layout = ({
       {/* Desktop navigation */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow border-r bg-background pt-5">
-          <div className="flex items-center justify-center px-4 pb-6">
+          <div className="flex items-center justify-center px-4 pb-3">
             <div className="flex flex-col items-center space-y-2 cursor-pointer" onClick={() => navigate('/')}>
               <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-36 w-36" />
-              <span className="text-xl font-bold text-[#1B4332]">AgriDécoupe</span>
+              
             </div>
           </div>
           <div className="mt-8 flex flex-1 flex-col">
