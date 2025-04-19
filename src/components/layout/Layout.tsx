@@ -8,7 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-
+interface LayoutProps {
+  children: React.ReactNode;
+}
 type NavItem = {
   title: string;
   href: string;
@@ -17,7 +19,6 @@ type NavItem = {
   }>;
   adminOnly?: boolean;
 };
-
 const navItems: NavItem[] = [{
   title: "Tableau de bord",
   href: "/",
@@ -52,7 +53,6 @@ const navItems: NavItem[] = [{
   icon: UserCog,
   adminOnly: true
 }];
-
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -201,5 +201,4 @@ const Layout = ({
       </div>
     </div>;
 };
-
 export default Layout;
