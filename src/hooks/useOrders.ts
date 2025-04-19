@@ -11,7 +11,7 @@ export const useOrders = () => {
     throw new Error('useOrders must be used within an AppProvider');
   }
   
-  const { orders, addOrder, updateOrder, deleteOrder, cuttingDays } = context;
+  const { orders, addOrder, updateOrder, deleteOrder, cuttingDays, filterOrders } = context;
   
   // Fonction utilitaire pour créer un nouvel élément de commande
   const createOrderItem = (product: Product, quantity: number = 1): OrderItem => {
@@ -44,6 +44,12 @@ export const useOrders = () => {
     );
   };
   
+  // Fonction pour vérifier si les commandes sont correctement sauvegardées
+  const verifyOrderSave = () => {
+    console.log('Commandes actuellement enregistrées:', orders.length);
+    return orders.length;
+  };
+  
   return {
     orders,
     addOrder,
@@ -51,6 +57,8 @@ export const useOrders = () => {
     deleteOrder,
     createOrderItem,
     calculateOrderTotalWeight,
-    getActiveOrders
+    getActiveOrders,
+    filterOrders,
+    verifyOrderSave
   };
 };
