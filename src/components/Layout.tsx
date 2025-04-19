@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronLeft, ChevronRight, Menu, X, FlaskConical, LogOut } from 'lucide-react';
+import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronLeft, ChevronRight, Menu, X, FlaskConical, LogOut, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -20,6 +20,7 @@ type NavItem = {
   icon: React.ComponentType<{
     className?: string;
   }>;
+  adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -57,6 +58,12 @@ const navItems: NavItem[] = [
     title: "Synthèse",
     href: "/summary",
     icon: FileText
+  },
+  {
+    title: "Utilisateurs",
+    href: "/users",
+    icon: UserCog,
+    adminOnly: true
   }
 ];
 
@@ -78,6 +85,8 @@ const Layout: React.FC<LayoutProps> = ({
     navigate('/login');
   };
 
+  const filteredNavItems = navItems.filter(item => !item.adminOnly || authState.user?.role === 'admin');
+
   return <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background md:hidden">
         <div className="container flex h-14 items-center">
@@ -90,18 +99,18 @@ const Layout: React.FC<LayoutProps> = ({
             </SheetTrigger>
             <SheetContent side="left" className="pr-0 sm:max-w-xs">
               <div className="flex items-center space-x-2 cursor-pointer" onClick={() => {
-              navigate('/');
-              setOpen(false);
-            }}>
+                navigate('/');
+                setOpen(false);
+              }}>
                 <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-8 w-8" />
                 <span className="font-bold text-[#1B4332]">AgriDécoupe</span>
               </div>
               <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
                 <div className="pl-1 pr-7">
-                  {navItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", currentPath === item.href && "bg-accent text-accent-foreground")} onClick={() => {
-                  navigate(item.href);
-                  setOpen(false);
-                }}>
+                  {filteredNavItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", currentPath === item.href && "bg-accent text-accent-foreground")} onClick={() => {
+                    navigate(item.href);
+                    setOpen(false);
+                  }}>
                       <item.icon className="h-4 w-4" />
                       {item.title}
                     </div>)}
@@ -166,7 +175,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           <div className="mt-8 flex flex-1 flex-col">
             <nav className="flex-1 space-y-1 px-4">
-              {navItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground")} onClick={() => navigate(item.href)}>
+              {filteredNavItems.map((item, index) => <div key={index} className={cn("flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer", (currentPath === item.href || currentPath.startsWith(item.href + '/')) && "bg-accent text-accent-foreground")} onClick={() => navigate(item.href)}>
                   <item.icon className="h-5 w-5" />
                   {item.title}
                 </div>)}
