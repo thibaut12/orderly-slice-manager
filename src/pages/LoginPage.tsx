@@ -1,84 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const {
-    authState,
-    login
-  } = useAuth();
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (authState.isAuthenticated) {
-      navigate('/');
-    }
-  }, [authState.isAuthenticated, navigate]);
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const AuthForm = () => {
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const { login } = useAuth();
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
     try {
-      await login(username, password);
+      const success = await login(username, password);
+      if (!success) {
+        // Gérer l'échec de la connexion ici si nécessaire
+        console.error("Login failed");
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-  return <div className="h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md px-4">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png" alt="AgriDécoupe" className="h-64 w-64 object-contain" />
-          </div>
-          
-          <p className="text-gray-500">Connectez-vous pour accéder à l'application</p>
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Connexion</CardTitle>
-            <CardDescription>
-              Entrez vos identifiants pour accéder au tableau de bord
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {authState.error && <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded">
-                  {authState.error}
-                </div>}
-              
-              <div className="space-y-2">
-                <Label htmlFor="username">Nom d'utilisateur</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input id="username" type="text" placeholder="Entrez votre nom d'utilisateur" value={username} onChange={e => setUsername(e.target.value)} className="pl-10" required />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mot de passe</Label>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input id="password" type="password" placeholder="Entrez votre mot de passe" value={password} onChange={e => setPassword(e.target.value)} className="pl-10" required />
-                </div>
-              </div>
-            </CardContent>
-            
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading || !username || !password}>
-                {isLoading ? 'Connexion en cours...' : 'Se connecter'}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="username">Nom d'utilisateur</Label>
+        <Input
+          id="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Entrez votre nom d'utilisateur"
+          type="text"
+          disabled={loading}
+        />
       </div>
-    </div>;
+      <div className="space-y-2">
+        <Label htmlFor="password">Mot de passe</Label>
+        <Input
+          id="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Entrez votre mot de passe"
+          type="password"
+          disabled={loading}
+        />
+      </div>
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Connexion..." : (
+          <>
+            Se connecter <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+    </form>
+  );
 };
+
+const LoginPage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="max-w-md mx-auto mt-16 space-y-6">
+      <div className="flex flex-col items-center space-y-2">
+        <div className="rounded-full overflow-hidden shadow-lg">
+          <img
+            src="/lovable-uploads/ad6df11d-dc42-4ccd-9e17-3c46ce1a8fcc.png"
+            alt="Logo AgriDécoupe"
+            className="w-32 h-32 object-cover"
+          />
+        </div>
+        <h1 className="text-2xl font-bold">Bienvenue sur AgriDécoupe</h1>
+        <p className="text-muted-foreground">
+          Connectez-vous pour accéder à votre espace.
+        </p>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Connexion</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AuthForm />
+          <div className="mt-4 text-center text-sm">
+            <span>Nouvelle ferme ? </span>
+            <button className="text-primary hover:underline font-medium" onClick={() => navigate("/register")}>
+              Créer un compte
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+      <p className="text-center text-sm text-muted-foreground">
+        © {new Date().getFullYear()} AgriDécoupe. Tous droits réservés.
+      </p>
+    </div>
+  );
+};
+
 export default LoginPage;
