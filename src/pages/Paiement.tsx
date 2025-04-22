@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Mail } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const PAID_AMOUNT = 50; // euros par an
 
 const Paiement = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const { authState } = useAuth();
+  const navigate = useNavigate();
   
   // Dans une vraie application, ces données viendraient de Supabase
   const [subscription, setSubscription] = useState({
@@ -36,6 +37,10 @@ const Paiement = () => {
     }, 1200);
   };
 
+  const handleReturn = () => {
+    navigate('/');
+  };
+
   const getDaysLeft = (date: Date) => {
     const now = new Date();
     const diffTime = date.getTime() - now.getTime();
@@ -46,11 +51,22 @@ const Paiement = () => {
   return (
     <div className="max-w-xl mx-auto mt-8">
       <Card>
-        <CardHeader>
-          <CardTitle>Votre abonnement</CardTitle>
-          <div className="text-muted-foreground text-sm">
-            Gérez votre abonnement à AgriDécoupe
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Votre abonnement</CardTitle>
+            <div className="text-muted-foreground text-sm">
+              Gérez votre abonnement à AgriDécoupe
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleReturn}
+            className="self-start"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Retour au tableau de bord</span>
+          </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Informations sur l'abonnement en cours */}
