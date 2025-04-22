@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronRight, Menu, X, FlaskConical, LogOut, UserCog } from 'lucide-react';
+import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronRight, Menu, X, FlaskConical, LogOut, UserCog, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -22,44 +22,51 @@ type NavItem = {
   adminOnly?: boolean;
 };
 
-const navItems: NavItem[] = [{
-  title: "Tableau de bord",
-  href: "/",
-  icon: Home
-}, {
-  title: "Clients",
-  href: "/clients",
-  icon: Users
-}, {
-  title: "Produits",
-  href: "/products",
-  icon: Package
-}, {
-  title: "Commandes",
-  href: "/orders",
-  icon: ShoppingBag
-}, {
-  title: "Journées de découpe",
-  href: "/cutting-days",
-  icon: Scissors
-}, {
-  title: "Traçabilité",
-  href: "/productions",
-  icon: FlaskConical
-}, {
-  title: "Synthèse",
-  href: "/summary",
-  icon: FileText
-}, {
-  title: "Abonnement",
-  href: "/paiement",
-  icon: Package
-}, {
-  title: "Utilisateurs",
-  href: "/users",
-  icon: UserCog,
-  adminOnly: true
-}];
+const navItems: NavItem[] = [
+  {
+    title: "Tableau de bord",
+    href: "/",
+    icon: Home
+  }, {
+    title: "Clients",
+    href: "/clients",
+    icon: Users
+  }, {
+    title: "Produits",
+    href: "/products",
+    icon: Package
+  }, {
+    title: "Commandes",
+    href: "/orders",
+    icon: ShoppingBag
+  }, {
+    title: "Journées de découpe",
+    href: "/cutting-days",
+    icon: Scissors
+  }, {
+    title: "Traçabilité",
+    href: "/productions",
+    icon: FlaskConical
+  }, {
+    title: "Synthèse",
+    href: "/summary",
+    icon: FileText
+  }, {
+    title: "Abonnement",
+    href: "/paiement",
+    icon: CreditCard
+  }, {
+    title: "Utilisateurs",
+    href: "/users",
+    icon: UserCog,
+    adminOnly: true
+  }, {
+    title: "Admin Abonnements",
+    href: "/admin/subscriptions",
+    icon: CreditCard,
+    adminOnly: true
+  }
+];
 
 const Layout = ({
   children

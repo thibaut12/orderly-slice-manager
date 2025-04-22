@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import UsersList from "./pages/users/UsersList";
 import Paiement from "./pages/Paiement";
+import AdminSubscriptions from "./pages/admin/Subscriptions";
 
 const queryClient = new QueryClient();
 
@@ -126,10 +128,17 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Paiement */}
+              {/* Paiement - accessible à tous les utilisateurs */}
               <Route path="/paiement" element={
                 <ProtectedRoute>
                   <Paiement />
+                </ProtectedRoute>
+              } />
+              
+              {/* Administration des abonnements - accessible uniquement aux admins */}
+              <Route path="/admin/subscriptions" element={
+                <ProtectedRoute>
+                  <AdminSubscriptions />
                 </ProtectedRoute>
               } />
               
