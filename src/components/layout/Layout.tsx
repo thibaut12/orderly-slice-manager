@@ -51,6 +51,10 @@ const navItems: NavItem[] = [{
   href: "/summary",
   icon: FileText
 }, {
+  title: "Abonnement",
+  href: "/paiement",
+  icon: Package
+}, {
   title: "Utilisateurs",
   href: "/users",
   icon: UserCog,
