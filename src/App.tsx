@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +7,25 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+// Import Dashboard and feature pages
+import Dashboard from "./pages/Dashboard";
+import { ClientsList } from "./pages/clients/ClientsList";
+import { ClientDetail } from "./pages/clients/ClientDetail";
+import { ProductsList } from "./pages/products/ProductsList";
+import { ProductDetail } from "./pages/products/ProductDetail";
+import { OrdersList } from "./pages/orders/OrdersList";
+import { OrderCreate } from "./pages/orders/OrderCreate";
+import { OrderDetail } from "./pages/orders/OrderDetail";
+import { CuttingDaysList } from "./pages/cuttingDays/CuttingDaysList";
+import { CuttingDayDetail } from "./pages/cuttingDays/CuttingDayDetail";
+import { ProductionsList } from "./pages/productions/ProductionsList";
+import { ProductionDetail } from "./pages/productions/ProductionDetail";
+import { UsersList } from "./pages/users/UsersList";
+import { Summary } from "./pages/summary/Summary";
+import { Paiement } from "./pages/Paiement";
+import { AdminSubscriptions } from "./pages/admin/Subscriptions";
 
 const queryClient = new QueryClient();
 
