@@ -21,7 +21,9 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const success = await login(email, password);
-      if (!success) {
+      if (success) {
+        navigate('/');
+      } else {
         toast.error("Échec de la connexion", {
           description: "Email ou mot de passe incorrect"
         });
