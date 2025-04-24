@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Users, Package, ShoppingBag, Scissors, FileText, ChevronRight, Menu, X, FlaskConical, LogOut, UserCog, CreditCard } from 'lucide-react';
@@ -75,7 +76,7 @@ const Layout = ({
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
   const {
-    authState,
+    user,
     logout
   } = useAuth();
   const currentPath = location.pathname;
@@ -84,7 +85,7 @@ const Layout = ({
     logout();
     navigate('/login');
   };
-  const filteredNavItems = navItems.filter(item => !item.adminOnly || authState.user?.role === 'admin');
+  const filteredNavItems = navItems.filter(item => !item.adminOnly || user?.role === 'admin');
 
   return <div className="flex min-h-screen flex-col">
       {/* Mobile navigation */}
@@ -137,15 +138,15 @@ const Layout = ({
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <span className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      {authState.user?.username.charAt(0).toUpperCase() || 'U'}
+                      {user?.username?.charAt(0).toUpperCase() || 'U'}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>
-                    {authState.user?.username || 'Utilisateur'}
+                    {user?.username || 'Utilisateur'}
                     <p className="text-xs text-muted-foreground">
-                      {authState.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                      {user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
                     </p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -182,12 +183,12 @@ const Layout = ({
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-accent">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                    {authState.user?.username.charAt(0).toUpperCase() || 'U'}
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-medium">{authState.user?.username}</p>
+                    <p className="text-sm font-medium">{user?.username}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {authState.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                      {user?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
                     </p>
                   </div>
                 </div>

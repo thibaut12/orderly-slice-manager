@@ -21,7 +21,7 @@ const API_KEY_STORAGE_KEY = "stripe_api_key";
 const AdminSubscriptions = () => {
   const [stripeApiKey, setStripeApiKey] = useState<string>("");
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
-  const { authState } = useAuth();
+  const { user } = useAuth();
   const [users, setUsers] = useState([
     { 
       id: "1", 
@@ -84,7 +84,7 @@ const AdminSubscriptions = () => {
   };
 
   // Vérifier si l'utilisateur est administrateur
-  if (authState.user?.role !== "admin") {
+  if (user?.role !== "admin") {
     return (
       <Layout>
         <div className="flex items-center justify-center h-[60vh] flex-col">
