@@ -3,19 +3,21 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-// Simule l'inscription – dans une vraie app, il faudrait connecter à Supabase/auth
-const RegisterPage: React.FC = () => {
+const RegisterPage = () => {
   const [form, setForm] = useState({
-    name: "",
+    farmName: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,19 +25,32 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (form.password !== form.confirmPassword) {
-      toast.error("Les mots de passe ne correspondent pas.");
+      toast.error("Les mots de passe ne correspondent pas");
       return;
     }
+
     setLoading(true);
-    // Ici, on simule une inscription réussie
-    setTimeout(() => {
-      setLoading(false);
-      toast.success("Inscription réussie !", {
-        description: "Votre compte a été créé. Connectez-vous maintenant.",
+    try {
+      const success = await register(form.email, form.password, {
+        farm_name: form.farmName,
       });
-      navigate("/login");
-    }, 1200);
+      
+      if (success) {
+        toast.success("Inscription réussie !", {
+          description: "Votre compte a été créé avec succès.",
+        });
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'inscription:", error);
+      toast.error("Erreur lors de l'inscription", {
+        description: "Une erreur est survenue. Veuillez réessayer.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,34 +60,70 @@ const RegisterPage: React.FC = () => {
           <CardTitle>Inscription d'une nouvelle ferme</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block mb-1" htmlFor="name">Nom de la ferme</label>
-              <Input required autoFocus id="name" name="name" value={form.name} onChange={handleChange} placeholder="Nom de la ferme" />
+              <Label htmlFor="farmName">Nom de la ferme</Label>
+              <Input
+                required
+                id="farmName"
+                name="farmName"
+                value={form.farmName}
+                onChange={handleChange}
+                placeholder="Nom de votre ferme"
+              />
             </div>
             <div>
-              <label className="block mb-1" htmlFor="email">Email</label>
-              <Input required id="email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="Adresse email" />
+              <Label htmlFor="email">Email</Label>
+              <Input
+                required
+                id="email"
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="votre@email.com"
+              />
             </div>
             <div>
-              <label className="block mb-1" htmlFor="password">Mot de passe</label>
-              <Input required id="password" name="password" type="password" value={form.password} onChange={handleChange} placeholder="Mot de passe" />
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input
+                required
+                id="password"
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Choisissez un mot de passe"
+              />
             </div>
             <div>
-              <label className="block mb-1" htmlFor="confirmPassword">Confirmer mot de passe</label>
-              <Input required id="confirmPassword" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} placeholder="Confirmer mot de passe" />
+              <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+              <Input
+                required
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirmez votre mot de passe"
+              />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Création du compte..." : "Créer mon compte"}
             </Button>
-            <Button type="button" variant="outline" className="w-full mt-2" onClick={() => navigate("/login")}>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate("/login")}
+            >
               Retour à la connexion
             </Button>
           </form>
         </CardContent>
       </Card>
       <div className="mt-3 text-xs text-muted-foreground text-center">
-        Votre compte sera soumis à validation par un administrateur si besoin.
+        Votre compte sera immédiatement activé après l'inscription.
       </div>
     </div>
   );

@@ -1,175 +1,106 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthState } from '@/types';
-import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-// Définir l'interface pour notre contexte d'authentification
 interface AuthContextType {
-  authState: AuthState;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  isAuthenticated: boolean;
+  user: any | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, metadata?: any) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
-// Créer le contexte
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Liste d'utilisateurs prédéfinie (dans une vraie app, ce serait dans une base de données)
-const predefinedUsers: User[] = [
-  {
-    id: uuidv4(),
-    username: 'admin',
-    password: 'admin123', // Dans une vraie app, ce serait un hash
-    role: 'admin',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: uuidv4(),
-    username: 'user',
-    password: 'user123', // Dans une vraie app, ce serait un hash
-    role: 'user',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
-
-// Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    isAuthenticated: false,
-    user: null,
-    loading: true,
-    error: null
-  });
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Vérifier s'il y a un utilisateur déjà connecté (localStorage)
   useEffect(() => {
-    const checkAuthStatus = () => {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          setAuthState({
-            isAuthenticated: true,
-            user,
-            loading: false,
-            error: null
-          });
-        } catch (error) {
-          localStorage.removeItem('currentUser');
-          setAuthState({
-            isAuthenticated: false,
-            user: null,
-            loading: false,
-            error: null
-          });
-        }
-      } else {
-        setAuthState(prev => ({ ...prev, loading: false }));
-      }
-    };
-    
-    checkAuthStatus();
+    // Vérifie la session au chargement
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Souscrit aux changements d'auth
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string) => {
     try {
-      // Mettre l'état en chargement
-      setAuthState(prev => ({ ...prev, loading: true, error: null }));
-      
-      // Pour simuler un délai réseau (optionnel)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Vérifier les identifiants
-      const user = predefinedUsers.find(
-        u => u.username === username && u.password === password
-      );
-      
-      if (user) {
-        // Clone l'utilisateur sans le mot de passe pour le stockage
-        const { password: _, ...safeUser } = user;
-        
-        // Stocker l'utilisateur dans localStorage
-        localStorage.setItem('currentUser', JSON.stringify(safeUser));
-        
-        // Mettre à jour l'état
-        setAuthState({
-          isAuthenticated: true,
-          user: safeUser as User,
-          loading: false,
-          error: null
-        });
-        
-        // Afficher un toast de succès
-        toast.success("Connexion réussie", {
-          description: `Bienvenue ${username} !`,
-        });
-        
-        console.log("Connexion réussie pour:", username);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        navigate('/');
         return true;
-      } else {
-        // Identifiants incorrects
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: "Nom d'utilisateur ou mot de passe incorrect"
-        });
-        
-        // Afficher un toast d'erreur
-        toast.error("Échec de la connexion", {
-          description: "Identifiants incorrects. Veuillez réessayer.",
-        });
-        
-        console.log("Échec de connexion pour:", username);
-        return false;
       }
-    } catch (error) {
-      // En cas d'erreur
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        loading: false,
-        error: "Une erreur s'est produite lors de la connexion"
-      });
-      
-      // Afficher un toast d'erreur
-      toast.error("Erreur de connexion", {
-        description: "Une erreur s'est produite. Veuillez réessayer.",
-      });
-      
-      console.error("Erreur lors de la connexion:", error);
+      return false;
+    } catch (error: any) {
+      console.error('Erreur de connexion:', error.message);
       return false;
     }
   };
 
-  const logout = () => {
-    // Supprimer l'utilisateur du localStorage
-    localStorage.removeItem('currentUser');
-    
-    // Mettre à jour l'état
-    setAuthState({
-      isAuthenticated: false,
-      user: null,
-      loading: false,
-      error: null
-    });
-    
-    // Afficher un toast de confirmation
-    toast.success("Déconnexion", {
-      description: "Vous avez été déconnecté avec succès.",
-    });
+  const register = async (email: string, password: string, metadata?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        return true;
+      }
+      return false;
+    } catch (error: any) {
+      console.error('Erreur d\'inscription:', error.message);
+      return false;
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ authState, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (error: any) {
+      console.error('Erreur de déconnexion:', error.message);
+    }
+  };
+
+  const value = {
+    isAuthenticated: !!user,
+    user,
+    loading,
+    login,
+    register,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook personnalisé pour utiliser le contexte d'authentification
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

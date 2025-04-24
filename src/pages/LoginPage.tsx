@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,63 +9,32 @@ import { toast } from "sonner";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const AuthForm = () => {
-  const [username, setUsername] = React.useState("");
+const LoginPage = () => {
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     try {
-      const success = await login(username, password);
+      const success = await login(email, password);
       if (!success) {
-        // Gérer l'échec de la connexion ici si nécessaire
-        console.error("Login failed");
+        toast.error("Échec de la connexion", {
+          description: "Email ou mot de passe incorrect"
+        });
       }
+    } catch (error) {
+      console.error("Erreur de connexion:", error);
+      toast.error("Erreur", {
+        description: "Une erreur est survenue lors de la connexion"
+      });
     } finally {
       setLoading(false);
     }
   };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="username">Nom d'utilisateur</Label>
-        <Input
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Entrez votre nom d'utilisateur"
-          type="text"
-          disabled={loading}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Mot de passe</Label>
-        <Input
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Entrez votre mot de passe"
-          type="password"
-          disabled={loading}
-        />
-      </div>
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Connexion..." : (
-          <>
-            Se connecter <ArrowRight className="ml-2 h-4 w-4" />
-          </>
-        )}
-      </Button>
-    </form>
-  );
-};
-
-const LoginPage = () => {
-  const navigate = useNavigate();
 
   return (
     <div className="max-w-md mx-auto mt-16 space-y-6">
@@ -86,10 +56,45 @@ const LoginPage = () => {
           <CardTitle>Connexion</CardTitle>
         </CardHeader>
         <CardContent>
-          <AuthForm />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="votre@email.com"
+                disabled={loading}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Votre mot de passe"
+                disabled={loading}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Connexion..." : (
+                <>
+                  Se connecter <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
           <div className="mt-4 text-center text-sm">
             <span>Nouvelle ferme ? </span>
-            <button className="text-primary hover:underline font-medium" onClick={() => navigate("/register")}>
+            <button 
+              className="text-primary hover:underline font-medium" 
+              onClick={() => navigate("/register")}
+            >
               Créer un compte
             </button>
           </div>
