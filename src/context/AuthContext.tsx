@@ -8,6 +8,7 @@ interface UserWithRole {
   email?: string;
   user_metadata?: any;
   role?: 'admin' | 'user';
+  username?: string; // Adding username to the interface
 }
 
 interface AuthContextType {
@@ -27,18 +28,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
+      // Using a different approach to check for admin role
+      // Manual check for admin role based on the admin email
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      if (error) {
-        console.error('Erreur lors de la récupération du rôle:', error);
-        return null;
+      if (userError) {
+        console.error('Erreur lors de la récupération de l\'utilisateur:', userError);
+        return 'user';
+      }
+
+      // Check if the user email matches the admin email
+      // This is a temporary solution until the user_roles table is properly set up
+      if (userData?.user?.email === 'dassier.thibault@gmail.com') {
+        return 'admin';
       }
       
-      return data?.role || 'user'; // Par défaut 'user' si aucun rôle n'est trouvé
+      return 'user';
     } catch (error) {
       console.error('Erreur:', error);
       return 'user';
@@ -52,9 +57,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const role = await fetchUserRole(authUser.id);
+    
+    // Extract the username from user metadata or use email as fallback
+    const username = authUser.user_metadata?.farm_name || 
+                    authUser.email?.split('@')[0] || 
+                    'Utilisateur';
+    
     setUser({
       ...authUser,
-      role
+      role,
+      username
     });
   };
 

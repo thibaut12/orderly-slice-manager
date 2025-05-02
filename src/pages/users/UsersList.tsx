@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { 
@@ -41,6 +40,9 @@ interface UserType {
   updatedAt: Date;
 }
 
+// List of admin emails - in a production app, this would come from your database
+const ADMIN_EMAILS = ['dassier.thibault@gmail.com'];
+
 const UsersList = () => {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
@@ -70,23 +72,16 @@ const UsersList = () => {
           throw authError;
         }
 
-        // Récupérer les rôles des utilisateurs
-        const { data: userRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('*');
-
-        if (rolesError) {
-          throw rolesError;
-        }
-
         // Combiner les informations
         const formattedUsers = authUsers.users.map(authUser => {
-          const roleInfo = userRoles?.find(r => r.user_id === authUser.id);
+          // Check if this user is an admin based on email
+          const isAdmin = ADMIN_EMAILS.includes(authUser.email || '');
+          
           return {
             id: authUser.id,
             email: authUser.email || '',
             username: authUser.user_metadata?.farm_name || authUser.email?.split('@')[0] || 'Utilisateur',
-            role: roleInfo?.role || 'user',
+            role: isAdmin ? 'admin' : 'user',
             createdAt: new Date(authUser.created_at),
             updatedAt: new Date(authUser.updated_at)
           };
@@ -144,24 +139,15 @@ const UsersList = () => {
         throw new Error("Échec de la création de l'utilisateur");
       }
 
-      // Définir le rôle si c'est un admin
-      if (newUser.role === 'admin') {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'admin'
-          });
-
-        if (roleError) throw roleError;
-      }
+      // Pour la gestion admin, nous utilisons simplement la liste des emails admin
+      // Dans une vraie application, vous utiliseriez une table user_roles ou similaire
 
       // Ajouter le nouvel utilisateur à la liste
       setUsers(prev => [...prev, {
         id: authData.user.id,
         email: newUserEmail,
         username: newUser.username || '',
-        role: newUser.role || 'user',
+        role: ADMIN_EMAILS.includes(newUserEmail) ? 'admin' : 'user',
         createdAt: new Date(),
         updatedAt: new Date()
       }]);
@@ -206,36 +192,6 @@ const UsersList = () => {
       );
 
       if (updateError) throw updateError;
-
-      // Mettre à jour le rôle si nécessaire
-      const { data: existingRole, error: fetchRoleError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', editingUser.id)
-        .single();
-
-      if (fetchRoleError && fetchRoleError.code !== 'PGRST116') { // PGRST116 = no rows returned
-        throw fetchRoleError;
-      }
-
-      if (editingUser.role === 'admin') {
-        if (!existingRole) {
-          // Ajouter le rôle admin
-          const { error: insertRoleError } = await supabase
-            .from('user_roles')
-            .insert({ user_id: editingUser.id, role: 'admin' });
-
-          if (insertRoleError) throw insertRoleError;
-        }
-      } else if (existingRole) {
-        // Supprimer le rôle admin
-        const { error: deleteRoleError } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', editingUser.id);
-
-        if (deleteRoleError) throw deleteRoleError;
-      }
 
       // Mettre à jour la liste des utilisateurs
       setUsers(prev => 
