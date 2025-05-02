@@ -15,6 +15,7 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { Shield, Settings, Mail, RefreshCw, Check, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const API_KEY_STORAGE_KEY = "stripe_api_key";
 
@@ -52,7 +53,45 @@ const AdminSubscriptions = () => {
     const key = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
     setStripeApiKey(key);
     setApiKeyInput(key);
-  }, []);
+
+    // Charger les vraies données d'abonnement depuis Supabase
+    const loadSubscriptions = async () => {
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError || !authUsers) {
+        console.error("Erreur lors du chargement des utilisateurs:", authError);
+        return;
+      }
+
+      const { data: subscriptions, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*');
+
+      if (subError || !subscriptions) {
+        console.error("Erreur lors du chargement des abonnements:", subError);
+        return;
+      }
+
+      // Combiner les données des utilisateurs et des abonnements
+      const updatedUsers = authUsers.users.map(authUser => {
+        const subscription = subscriptions.find(sub => sub.user_id === authUser.id);
+        return {
+          id: authUser.id,
+          username: authUser.user_metadata?.farm_name || authUser.email?.split('@')[0] || 'Utilisateur',
+          email: authUser.email || '',
+          status: subscription?.status || 'expired',
+          trialEndsAt: subscription?.trial_ends_at ? new Date(subscription.trial_ends_at) : null,
+          subscriptionEndsAt: subscription?.current_period_ends_at ? new Date(subscription.current_period_ends_at) : null
+        };
+      });
+
+      setUsers(updatedUsers);
+    };
+
+    if (user?.role === 'admin') {
+      loadSubscriptions();
+    }
+  }, [user]);
 
   const handleSaveApiKey = () => {
     localStorage.setItem(API_KEY_STORAGE_KEY, apiKeyInput);
@@ -67,20 +106,37 @@ const AdminSubscriptions = () => {
     });
   };
 
-  const extendTrial = (id: string, username: string) => {
-    setUsers(users.map(user => {
-      if (user.id === id) {
-        return {
-          ...user,
-          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        };
-      }
-      return user;
-    }));
-    toast.success(`Période d'essai prolongée pour ${username}`, {
-      description: `30 jours supplémentaires accordés.`,
-      icon: <Check className="text-primary" />,
-    });
+  const extendTrial = async (id: string, username: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .update({
+          trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'trial'
+        })
+        .eq('user_id', id);
+
+      if (error) throw error;
+
+      setUsers(users.map(user => {
+        if (user.id === id) {
+          return {
+            ...user,
+            status: 'trial',
+            trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          };
+        }
+        return user;
+      }));
+
+      toast.success(`Période d'essai prolongée pour ${username}`, {
+        description: `30 jours supplémentaires accordés.`,
+        icon: <Check className="text-primary" />,
+      });
+    } catch (error: any) {
+      console.error("Erreur lors de la prolongation de la période d'essai:", error);
+      toast.error("Erreur lors de la prolongation de la période d'essai");
+    }
   };
 
   // Vérifier si l'utilisateur est administrateur
@@ -209,7 +265,7 @@ const AdminSubscriptions = () => {
                         >
                           <Mail className="h-4 w-4 mr-1" /> Rappel
                         </Button>
-                        {user.status === 'trial' && (
+                        {user.status === 'expired' && (
                           <Button 
                             variant="outline" 
                             size="sm" 

@@ -117,7 +117,7 @@ const App = () => (
               
               {/* Gestion des utilisateurs */}
               <Route path="/users" element={
-                <ProtectedRoute>
+                <ProtectedRoute adminOnly={true}>
                   <UsersList />
                 </ProtectedRoute>
               } />
@@ -138,7 +138,7 @@ const App = () => (
               
               {/* Administration des abonnements - accessible uniquement aux admins */}
               <Route path="/admin/subscriptions" element={
-                <ProtectedRoute>
+                <ProtectedRoute adminOnly={true}>
                   <AdminSubscriptions />
                 </ProtectedRoute>
               } />
