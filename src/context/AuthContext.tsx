@@ -8,7 +8,7 @@ interface UserWithRole {
   email?: string;
   user_metadata?: any;
   role?: 'admin' | 'user';
-  username?: string; // Adding username to the interface
+  username?: string; // Username property
 }
 
 interface AuthContextType {

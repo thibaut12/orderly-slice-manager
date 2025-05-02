@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { 
@@ -81,7 +82,7 @@ const UsersList = () => {
             id: authUser.id,
             email: authUser.email || '',
             username: authUser.user_metadata?.farm_name || authUser.email?.split('@')[0] || 'Utilisateur',
-            role: isAdmin ? 'admin' : 'user',
+            role: isAdmin ? 'admin' as const : 'user' as const, // Type assertion to ensure correct typing
             createdAt: new Date(authUser.created_at),
             updatedAt: new Date(authUser.updated_at)
           };
@@ -142,12 +143,14 @@ const UsersList = () => {
       // Pour la gestion admin, nous utilisons simplement la liste des emails admin
       // Dans une vraie application, vous utiliseriez une table user_roles ou similaire
 
+      const userRole: 'admin' | 'user' = ADMIN_EMAILS.includes(newUserEmail) ? 'admin' : 'user';
+
       // Ajouter le nouvel utilisateur à la liste
       setUsers(prev => [...prev, {
         id: authData.user.id,
         email: newUserEmail,
         username: newUser.username || '',
-        role: ADMIN_EMAILS.includes(newUserEmail) ? 'admin' : 'user',
+        role: userRole,
         createdAt: new Date(),
         updatedAt: new Date()
       }]);
