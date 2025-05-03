@@ -27,7 +27,15 @@ import Summary from "./pages/summary/Summary";
 import Paiement from "./pages/Paiement";
 import AdminSubscriptions from "./pages/admin/Subscriptions";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 60000, // 1 minute
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
