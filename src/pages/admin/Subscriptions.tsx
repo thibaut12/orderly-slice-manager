@@ -50,37 +50,30 @@ const AdminSubscriptions = () => {
       setError(null);
       
       try {
-        // Récupérer tous les utilisateurs
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
-        
-        if (profilesError) throw new Error(`Erreur lors du chargement des profils: ${profilesError.message}`);
-        
-        // Récupérer tous les abonnements
+        // Récupérer les abonnements directement
         const { data: subscriptions, error: subError } = await supabase
           .from('subscriptions')
           .select('*');
         
         if (subError) throw new Error(`Erreur lors du chargement des abonnements: ${subError.message}`);
 
-        // Combiner les données des utilisateurs et des abonnements
+        // Transformer les données des abonnements en format utilisable
         const updatedUsers: SubscriptionUser[] = [];
         
-        if (profiles && subscriptions) {
-          profiles.forEach(profile => {
-            const subscription = subscriptions.find(sub => sub.user_id === profile.id);
+        if (subscriptions) {
+          subscriptions.forEach(subscription => {
+            // Créer un nom d'utilisateur à partir de l'ID utilisateur (depuis abonnement)
+            // Puisque nous n'avons pas accès à la table profiles
+            const username = `Utilisateur ${subscription.user_id.substring(0, 6)}`;
             
-            if (subscription) {
-              updatedUsers.push({
-                id: profile.id,
-                username: profile.farm_name || profile.email?.split('@')[0] || 'Utilisateur',
-                email: profile.email || '',
-                status: subscription.status as 'trial' | 'active' | 'expired',
-                trialEndsAt: subscription.trial_ends_at ? new Date(subscription.trial_ends_at) : null,
-                subscriptionEndsAt: subscription.current_period_ends_at ? new Date(subscription.current_period_ends_at) : null
-              });
-            }
+            updatedUsers.push({
+              id: subscription.user_id,
+              username: username,
+              email: `user-${subscription.user_id.substring(0, 6)}@example.com`, // Email fictif basé sur l'ID
+              status: subscription.status as 'trial' | 'active' | 'expired',
+              trialEndsAt: subscription.trial_ends_at ? new Date(subscription.trial_ends_at) : null,
+              subscriptionEndsAt: subscription.current_period_ends_at ? new Date(subscription.current_period_ends_at) : null
+            });
           });
         }
         
