@@ -27,17 +27,7 @@ import Summary from "./pages/summary/Summary";
 import Paiement from "./pages/Paiement";
 import AdminSubscriptions from "./pages/admin/Subscriptions";
 
-// Création du client de requête avec des options optimisées
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 60000, // 1 minute
-      gcTime: 300000, // 5 minutes
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -127,7 +117,7 @@ const App = () => (
               
               {/* Gestion des utilisateurs */}
               <Route path="/users" element={
-                <ProtectedRoute adminOnly={true}>
+                <ProtectedRoute>
                   <UsersList />
                 </ProtectedRoute>
               } />
@@ -148,7 +138,7 @@ const App = () => (
               
               {/* Administration des abonnements - accessible uniquement aux admins */}
               <Route path="/admin/subscriptions" element={
-                <ProtectedRoute adminOnly={true}>
+                <ProtectedRoute>
                   <AdminSubscriptions />
                 </ProtectedRoute>
               } />

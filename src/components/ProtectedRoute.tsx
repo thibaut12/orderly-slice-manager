@@ -1,54 +1,30 @@
 
-import React, { useEffect } from 'react';
-import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import LoadingSpinner from './users/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  adminOnly?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
-  const { loading, isAuthenticated, user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { loading, isAuthenticated } = useAuth();
   
-  useEffect(() => {
-    console.log("ProtectedRoute: ", { 
-      isAuthenticated, 
-      loading, 
-      adminOnly, 
-      userRole: user?.role,
-      path: location.pathname 
-    });
-    
-    // For debugging: log all session info
-    if (!isAuthenticated && !loading) {
-      console.log("Non authentifié sur route protégée:", location.pathname);
-    }
-  }, [isAuthenticated, loading, adminOnly, user, location]);
-  
-  // Showing loading spinner while checking authentication
+  // Affiche un chargement pendant la vérification de l'authentification
   if (loading) {
-    console.log("Affichage du spinner de chargement...");
-    return <LoadingSpinner />;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
   
-  // If not authenticated, redirect to login page
+  // Si non authentifié, rediriger vers la page de connexion
   if (!isAuthenticated) {
-    console.log("Utilisateur non authentifié, redirection vers /login");
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace />;
   }
   
-  // If admin-only page and user is not admin, redirect to home
-  if (adminOnly && user?.role !== 'admin') {
-    console.log("Utilisateur non admin, redirection vers /");
-    return <Navigate to="/" replace />;
-  }
-  
-  // If authenticated and with required permissions, show protected content
-  console.log("Accès autorisé à la route:", location.pathname);
+  // Si authentifié, afficher les enfants (les composants protégés)
   return <>{children}</>;
 };
 

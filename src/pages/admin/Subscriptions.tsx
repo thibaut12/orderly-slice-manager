@@ -14,157 +14,45 @@ import {
   TableBody, 
   TableCell 
 } from "@/components/ui/table";
-import { Shield, Settings, Mail, RefreshCw, Check, X, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import LoadingSpinner from "@/components/users/LoadingSpinner";
-import { UserType } from "@/types/user";
+import { Shield, Settings, Mail, RefreshCw, Check, X } from "lucide-react";
 
 const API_KEY_STORAGE_KEY = "stripe_api_key";
-
-interface SubscriptionUser {
-  id: string;
-  username: string;
-  email: string;
-  status: 'trial' | 'active' | 'expired';
-  trialEndsAt: Date | null;
-  subscriptionEndsAt: Date | null;
-}
 
 const AdminSubscriptions = () => {
   const [stripeApiKey, setStripeApiKey] = useState<string>("");
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const { user } = useAuth();
-  const [users, setUsers] = useState<SubscriptionUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState([
+    { 
+      id: "1", 
+      username: "Ferme du Soleil", 
+      email: "ferme.soleil@example.com",
+      status: "trial", 
+      trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) 
+    },
+    { 
+      id: "2", 
+      username: "Ferme des Vallées", 
+      email: "vallee@example.com",
+      status: "active", 
+      trialEndsAt: null,
+      subscriptionEndsAt: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000)
+    },
+    { 
+      id: "3", 
+      username: "Élevage Martin", 
+      email: "martin@example.com",
+      status: "expired", 
+      trialEndsAt: null 
+    }
+  ]);
 
   useEffect(() => {
     // Récupérer la clé API depuis le localStorage
     const key = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
     setStripeApiKey(key);
     setApiKeyInput(key);
-
-    // Charger les vraies données d'abonnement depuis Supabase
-    const loadSubscriptions = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Récupérer les abonnements directement
-        const { data: subscriptions, error: subError } = await supabase
-          .from('subscriptions')
-          .select('*');
-        
-        if (subError) throw new Error(`Erreur lors du chargement des abonnements: ${subError.message}`);
-
-        // Transformer les données des abonnements en format utilisable
-        const updatedUsers: SubscriptionUser[] = [];
-        
-        if (subscriptions) {
-          subscriptions.forEach(subscription => {
-            // Créer un nom d'utilisateur à partir de l'ID utilisateur (depuis abonnement)
-            // Puisque nous n'avons pas accès à la table profiles
-            const username = `Utilisateur ${subscription.user_id.substring(0, 6)}`;
-            
-            updatedUsers.push({
-              id: subscription.user_id,
-              username: username,
-              email: `user-${subscription.user_id.substring(0, 6)}@example.com`, // Email fictif basé sur l'ID
-              status: subscription.status as 'trial' | 'active' | 'expired',
-              trialEndsAt: subscription.trial_ends_at ? new Date(subscription.trial_ends_at) : null,
-              subscriptionEndsAt: subscription.current_period_ends_at ? new Date(subscription.current_period_ends_at) : null
-            });
-          });
-        }
-        
-        // Utiliser des données de démonstration si aucun utilisateur n'est trouvé
-        if (updatedUsers.length === 0) {
-          updatedUsers.push(
-            { 
-              id: "1", 
-              username: "Ferme du Soleil", 
-              email: "ferme.soleil@example.com",
-              status: "trial", 
-              trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-              subscriptionEndsAt: null
-            },
-            { 
-              id: "2", 
-              username: "Ferme des Vallées", 
-              email: "vallee@example.com",
-              status: "active", 
-              trialEndsAt: null,
-              subscriptionEndsAt: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000)
-            },
-            { 
-              id: "3", 
-              username: "Élevage Martin", 
-              email: "martin@example.com",
-              status: "expired", 
-              trialEndsAt: null,
-              subscriptionEndsAt: null
-            },
-            {
-              id: "4",
-              username: "Ferme des Gourmets",
-              email: "gourmets@example.com",
-              status: "trial",
-              trialEndsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-              subscriptionEndsAt: null
-            }
-          );
-        }
-
-        setUsers(updatedUsers);
-      } catch (err: any) {
-        console.error("Erreur:", err);
-        setError(err.message || "Une erreur s'est produite lors du chargement des abonnements");
-        
-        // Charger des données de démonstration en cas d'erreur
-        const demoUsers = [
-          { 
-            id: "1", 
-            username: "Ferme du Soleil", 
-            email: "ferme.soleil@example.com",
-            status: "trial" as const, 
-            trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-            subscriptionEndsAt: null
-          },
-          { 
-            id: "2", 
-            username: "Ferme des Vallées", 
-            email: "vallee@example.com",
-            status: "active" as const, 
-            trialEndsAt: null,
-            subscriptionEndsAt: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000)
-          },
-          { 
-            id: "3", 
-            username: "Élevage Martin", 
-            email: "martin@example.com",
-            status: "expired" as const, 
-            trialEndsAt: null,
-            subscriptionEndsAt: null
-          },
-          {
-            id: "4",
-            username: "Ferme des Gourmets",
-            email: "gourmets@example.com",
-            status: "trial" as const,
-            trialEndsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-            subscriptionEndsAt: null
-          }
-        ];
-        setUsers(demoUsers);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user?.role === 'admin') {
-      loadSubscriptions();
-    }
-  }, [user]);
+  }, []);
 
   const handleSaveApiKey = () => {
     localStorage.setItem(API_KEY_STORAGE_KEY, apiKeyInput);
@@ -179,37 +67,20 @@ const AdminSubscriptions = () => {
     });
   };
 
-  const extendTrial = async (id: string, username: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .update({
-          trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'trial'
-        })
-        .eq('user_id', id);
-
-      if (error) throw error;
-
-      setUsers(users.map(user => {
-        if (user.id === id) {
-          return {
-            ...user,
-            status: 'trial',
-            trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          };
-        }
-        return user;
-      }));
-
-      toast.success(`Période d'essai prolongée pour ${username}`, {
-        description: `30 jours supplémentaires accordés.`,
-        icon: <Check className="text-primary" />,
-      });
-    } catch (error: any) {
-      console.error("Erreur lors de la prolongation de la période d'essai:", error);
-      toast.error("Erreur lors de la prolongation de la période d'essai");
-    }
+  const extendTrial = (id: string, username: string) => {
+    setUsers(users.map(user => {
+      if (user.id === id) {
+        return {
+          ...user,
+          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        };
+      }
+      return user;
+    }));
+    toast.success(`Période d'essai prolongée pour ${username}`, {
+      description: `30 jours supplémentaires accordés.`,
+      icon: <Check className="text-primary" />,
+    });
   };
 
   // Vérifier si l'utilisateur est administrateur
@@ -226,14 +97,6 @@ const AdminSubscriptions = () => {
       </Layout>
     );
   }
-  
-  if (loading) {
-    return (
-      <Layout>
-        <LoadingSpinner />
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
@@ -246,7 +109,7 @@ const AdminSubscriptions = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-1" onClick={() => window.location.reload()}>
+            <Button variant="outline" size="sm" className="gap-1">
               <RefreshCw className="h-4 w-4" /> Rafraîchir
             </Button>
             <Button variant="outline" size="sm" className="gap-1">
@@ -254,21 +117,6 @@ const AdminSubscriptions = () => {
             </Button>
           </div>
         </div>
-
-        {error && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <div className="flex gap-2 text-destructive items-start">
-                <AlertCircle className="h-5 w-5 mt-0.5" />
-                <div>
-                  <p className="font-semibold">Erreur lors du chargement des données</p>
-                  <p className="text-sm">{error}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Des données de démonstration sont affichées.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Clé API Stripe - Visible uniquement par l'admin */}
         <Card>
@@ -319,69 +167,61 @@ const AdminSubscriptions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6">
-                      Aucun abonnement trouvé.
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <div className={`h-2 w-2 rounded-full mr-2 ${
+                          user.status === 'trial' ? 'bg-blue-500' : 
+                          user.status === 'active' ? 'bg-green-500' : 
+                          'bg-red-500'
+                        }`} />
+                        {user.status === 'trial' ? 'Essai' : 
+                         user.status === 'active' ? 'Abonné' : 
+                         'Expiré'}
+                      </div>
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.username}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <div className={`h-2 w-2 rounded-full mr-2 ${
-                            user.status === 'trial' ? 'bg-blue-500' : 
-                            user.status === 'active' ? 'bg-green-500' : 
-                            'bg-red-500'
-                          }`} />
-                          {user.status === 'trial' ? 'Essai' : 
-                           user.status === 'active' ? 'Abonné' : 
-                           'Expiré'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {user.trialEndsAt && (
-                          <span className="text-sm">
-                            Essai jusqu'au {user.trialEndsAt.toLocaleDateString('fr-FR')}
-                          </span>
-                        )}
-                        {user.subscriptionEndsAt && (
-                          <span className="text-sm">
-                            Abonnement jusqu'au {user.subscriptionEndsAt.toLocaleDateString('fr-FR')}
-                          </span>
-                        )}
-                        {!user.trialEndsAt && !user.subscriptionEndsAt && (
-                          <span className="text-sm text-muted-foreground">
-                            Aucun abonnement actif
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                    <TableCell>
+                      {user.trialEndsAt && (
+                        <span className="text-sm">
+                          Essai jusqu'au {user.trialEndsAt.toLocaleDateString('fr-FR')}
+                        </span>
+                      )}
+                      {user.subscriptionEndsAt && (
+                        <span className="text-sm">
+                          Abonnement jusqu'au {user.subscriptionEndsAt.toLocaleDateString('fr-FR')}
+                        </span>
+                      )}
+                      {!user.trialEndsAt && !user.subscriptionEndsAt && (
+                        <span className="text-sm text-muted-foreground">
+                          Aucun abonnement actif
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => sendReminder(user.email, user.username)}
+                        >
+                          <Mail className="h-4 w-4 mr-1" /> Rappel
+                        </Button>
+                        {user.status === 'trial' && (
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => sendReminder(user.email, user.username)}
+                            onClick={() => extendTrial(user.id, user.username)}
                           >
-                            <Mail className="h-4 w-4 mr-1" /> Rappel
+                            Prolonger essai
                           </Button>
-                          {user.status === 'expired' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => extendTrial(user.id, user.username)}
-                            >
-                              Prolonger essai
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
