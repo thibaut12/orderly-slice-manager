@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { 
   Users, Package, ShoppingCart, FileText, TrendingUp, 
@@ -15,6 +15,10 @@ import LoadingSpinner from '@/components/users/LoadingSpinner';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  
+  useEffect(() => {
+    console.log("Dashboard chargé", { user, loading });
+  }, [user, loading]);
 
   if (loading) {
     return <LoadingSpinner />;
