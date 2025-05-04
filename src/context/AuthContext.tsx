@@ -49,22 +49,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUserWithRole = async (authUser: any) => {
     if (!authUser) {
       setUser(null);
-      return;
+      return null;
     }
 
-    const role = await fetchUserRole(authUser.id);
-    
-    const username = authUser.user_metadata?.farm_name || 
-                    authUser.email?.split('@')[0] || 
-                    'Utilisateur';
-    
-    setUser({
-      ...authUser,
-      role,
-      username
-    });
-    
-    console.log("Utilisateur mis à jour:", { id: authUser.id, role, username });
+    try {
+      const role = await fetchUserRole(authUser.id);
+      
+      const username = authUser.user_metadata?.farm_name || 
+                      authUser.email?.split('@')[0] || 
+                      'Utilisateur';
+      
+      const updatedUser = {
+        ...authUser,
+        role,
+        username
+      };
+      
+      setUser(updatedUser);
+      console.log("Utilisateur mis à jour:", { id: authUser.id, role, username });
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'utilisateur:', error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -91,22 +99,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Set up auth listener first, then check session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Changement d'état d'authentification:", event);
       
-      if (session?.user) {
+      if (event === 'SIGNED_IN' && session?.user) {
         console.log("Utilisateur connecté:", session.user.id);
         await updateUserWithRole(session.user);
-      } else {
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
         console.log("Utilisateur déconnecté");
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
+
+    // Now check session
+    checkSession();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -126,8 +135,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         console.log("Connexion réussie pour:", data.user.id);
-        await updateUserWithRole(data.user);
-        return true;
+        const updatedUser = await updateUserWithRole(data.user);
+        return !!updatedUser;
       }
       return false;
     } catch (error: any) {

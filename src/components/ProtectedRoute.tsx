@@ -22,26 +22,32 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
       userRole: user?.role,
       path: location.pathname 
     });
+    
+    // For debugging: log all session info
+    if (!isAuthenticated && !loading) {
+      console.log("Non authentifié sur route protégée:", location.pathname);
+    }
   }, [isAuthenticated, loading, adminOnly, user, location]);
   
-  // Affiche un chargement pendant la vérification de l'authentification
+  // Showing loading spinner while checking authentication
   if (loading) {
+    console.log("Affichage du spinner de chargement...");
     return <LoadingSpinner />;
   }
   
-  // Si non authentifié, rediriger vers la page de connexion
+  // If not authenticated, redirect to login page
   if (!isAuthenticated) {
     console.log("Utilisateur non authentifié, redirection vers /login");
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
   
-  // Si page admin et utilisateur non admin, rediriger vers la page d'accueil
+  // If admin-only page and user is not admin, redirect to home
   if (adminOnly && user?.role !== 'admin') {
     console.log("Utilisateur non admin, redirection vers /");
     return <Navigate to="/" replace />;
   }
   
-  // Si authentifié et avec les droits requis, afficher les enfants (les composants protégés)
+  // If authenticated and with required permissions, show protected content
   console.log("Accès autorisé à la route:", location.pathname);
   return <>{children}</>;
 };

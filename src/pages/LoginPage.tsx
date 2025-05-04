@@ -13,15 +13,17 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    console.log("LoginPage: Authentication check", { isAuthenticated, user });
+    if (isAuthenticated && user) {
+      console.log("User is authenticated, redirecting to home page");
       navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -36,6 +38,7 @@ const LoginPage = () => {
         toast.success("Connexion réussie", {
           description: "Vous êtes maintenant connecté"
         });
+        // Force immediate navigation rather than waiting for the effect
         navigate('/');
       } else {
         console.error("Échec de la connexion: aucune erreur spécifique retournée");
