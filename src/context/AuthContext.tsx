@@ -8,7 +8,7 @@ interface UserWithRole {
   email?: string;
   user_metadata?: any;
   role?: 'admin' | 'user';
-  username?: string; // Username property
+  username?: string;
 }
 
 interface AuthContextType {
@@ -28,8 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (userId: string) => {
     try {
-      // Using a different approach to check for admin role
-      // Manual check for admin role based on the admin email
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
@@ -37,8 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return 'user';
       }
 
-      // Check if the user email matches the admin email
-      // This is a temporary solution until the user_roles table is properly set up
       if (userData?.user?.email === 'dassier.thibault@gmail.com') {
         return 'admin';
       }
@@ -58,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const role = await fetchUserRole(authUser.id);
     
-    // Extract the username from user metadata or use email as fallback
     const username = authUser.user_metadata?.farm_name || 
                     authUser.email?.split('@')[0] || 
                     'Utilisateur';
@@ -68,29 +63,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role,
       username
     });
+    
+    console.log("Utilisateur mis à jour:", { id: authUser.id, role, username });
   };
 
   useEffect(() => {
-    // Vérifie la session au chargement
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await updateUserWithRole(session.user);
-      } else {
+      try {
+        console.log("Vérification de la session...");
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Erreur lors de la vérification de la session:", error);
+          setUser(null);
+        } else if (data.session?.user) {
+          console.log("Session trouvée pour l'utilisateur:", data.session.user.id);
+          await updateUserWithRole(data.session.user);
+        } else {
+          console.log("Aucune session active trouvée");
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Erreur inattendue lors de la vérification de la session:", err);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkSession();
 
-    // Souscrit aux changements d'auth
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Changement d'état d'authentification:", event);
+      
       if (session?.user) {
+        console.log("Utilisateur connecté:", session.user.id);
         await updateUserWithRole(session.user);
       } else {
+        console.log("Utilisateur déconnecté");
         setUser(null);
       }
       setLoading(false);
@@ -101,21 +113,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("Tentative de connexion avec:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur de connexion:", error.message);
+        throw error;
+      }
 
       if (data.user) {
+        console.log("Connexion réussie pour:", data.user.id);
         await updateUserWithRole(data.user);
         return true;
       }
       return false;
     } catch (error: any) {
       console.error('Erreur de connexion:', error.message);
-      return false;
+      throw error;
     }
   };
 
@@ -147,6 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setUser(null);
+      console.log("Déconnexion réussie");
     } catch (error: any) {
       console.error('Erreur de déconnexion:', error.message);
     }

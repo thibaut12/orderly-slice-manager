@@ -1,37 +1,52 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
+    
     try {
+      console.log("Tentative de connexion avec:", { email });
       const success = await login(email, password);
+      
       if (success) {
+        console.log("Connexion réussie, redirection vers /");
+        toast.success("Connexion réussie", {
+          description: "Vous êtes maintenant connecté"
+        });
         navigate('/');
       } else {
+        console.error("Échec de la connexion: aucune erreur spécifique retournée");
         toast.error("Échec de la connexion", {
           description: "Email ou mot de passe incorrect"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur de connexion:", error);
-      toast.error("Erreur", {
-        description: "Une erreur est survenue lors de la connexion"
+      toast.error("Erreur de connexion", {
+        description: error.message || "Une erreur est survenue lors de la connexion"
       });
     } finally {
       setLoading(false);
@@ -84,7 +99,12 @@ const LoginPage = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Connexion..." : (
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connexion...
+                </>
+              ) : (
                 <>
                   Se connecter <ArrowRight className="ml-2 h-4 w-4" />
                 </>
