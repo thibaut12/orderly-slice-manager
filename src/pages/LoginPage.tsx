@@ -6,37 +6,55 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Si déjà authentifié, rediriger vers la page d'accueil
+  React.useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      navigate('/');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    
+    if (!email || !password) {
+      toast.error("Champs obligatoires", {
+        description: "Veuillez remplir tous les champs"
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       const success = await login(email, password);
+      console.log("Résultat de connexion:", success);
+      
       if (success) {
         navigate('/');
-      } else {
-        toast.error("Échec de la connexion", {
-          description: "Email ou mot de passe incorrect"
-        });
       }
     } catch (error) {
-      console.error("Erreur de connexion:", error);
-      toast.error("Erreur", {
-        description: "Une erreur est survenue lors de la connexion"
-      });
+      console.error("Exception lors de la connexion:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto mt-16 space-y-6">
@@ -84,7 +102,11 @@ const LoginPage = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Connexion..." : (
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connexion...
+                </>
+              ) : (
                 <>
                   Se connecter <ArrowRight className="ml-2 h-4 w-4" />
                 </>
